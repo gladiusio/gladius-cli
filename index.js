@@ -26,6 +26,11 @@ prompt.delimiter = " ";
 prompt.start();
 
 
+// Check on init.json file
+if (!fs.existsSync(appDir + "/init.json")) {
+  reset();
+}
+
 // The functions below are called by the various options provided
 /******************************************************************************/
 
