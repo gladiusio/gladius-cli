@@ -1,6 +1,6 @@
 {
   "name": "gladius-cli",
-  "version": "0.1b",
+  "version": "0.1.1-beta",
   "description": "The Gladius node command line interface, entry point for the Gladius system",
   "main": "index.js",
   "scripts": {
@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/gladiusio/gladius-cli#readme",
   "dependencies": {
+    "axios": "^0.16.2",
     "prompt": "^1.0.0"
   }
 }
