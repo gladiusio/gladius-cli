@@ -5,18 +5,20 @@ Command line interface to control the node daemon.
 **This is a work in progress, not all of the below methods will work**
 
 ## Installation
+First install nodejs and npm from [here](https://nodejs.org/en/).
 
-Run the following command to install the Gladius CLI
+Navigate to the project and run the following command to install the Gladius
+CLI.
 
-`npm install -g gladius-cli`
+`npm install -g .`
 
-And then install the daemon using either [docker](https://gladius.io) or
+Finally, install the daemon using either [docker](https://gladius.io) or
 [directly](https://gladius.io)
 
-# Setup
+## Setup
 
-Set up a static IP for the machine you will be running the Gladius node on, and
-forward port 443 and 80 on your router to this machine.
+Set up a local static IP for the machine you will be running the Gladius node on
+, and forward port 443 and 80 on your router to this machine.
 
 _TODO: Talk about configuring a hostname for SSL in future_
 
@@ -41,13 +43,13 @@ To inform the daemon that you would like to stop accepting requests, run
 `gladius-node stop`. This will leave the daemon running, but will stop
 networking and transactions from taking place.
 
-# Configuration
+## Configuration
 To configure features of the Gladius node software that would normally not be
 used by the average user, run `gladius-node config-location` to get the location
 of the "config.json" file that dictates parameters like ports and the IP address
 of the daemon.   
 
-# Notes and warnings
+## Notes and warnings
 You can see a full list of the commands available (some may not be fully
   functional) by running `gladius-node --help`
 
