@@ -17,10 +17,9 @@ var axios = require("axios");
 var config = require("./config.js") // Load our config file
 
 var appDir = path.dirname(require.main.filename); // Get where this file is
+var daemonAddress = config.controlDaemonAddress + ":" + config.controlDaemonPort;
 
-
-console.log(appDir);
-
+// Set up prompt
 prompt.message = colors.blue("[Gladius-Node]");
 prompt.delimiter = " ";
 
@@ -36,7 +35,7 @@ function init() {
   let schema = {
     properties: {
       email: {
-        description: "What's your email?",
+        description: "What's your email? (So we can contact you about the beta):",
         pattern: /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
         message: "Not a valid email",
         required: true
@@ -45,16 +44,35 @@ function init() {
         description: "What's your first name?",
         required: true
       },
-      privateKeyLocation: {
-        description: "Private key location (my/key/here):",
+      bio: {
+        description: "Short bio about why you're interested in Gladius:",
         required: true
+      },
+      key: {
+        description: "Private key location (my/key/here):",
+        required: true,
+        message: "Not a valid key or key location",
+        conform: function(value) {
+          return (value == "test");
+        }
       }
     }
   };
 
-  // Prompt and forward data
+  // Prompt and store the data
   prompt.get(schema, function(err, result) {
-    // TODO: Save the data to a config.json file
+    console.log(colors.blue(
+      "\nIf the above information isn't correct, run init again. If it is, you can run gladius-node join-pool."
+    ));
+    initData = {
+      email: result.email,
+      name: result.name,
+      bio: result.bio,
+      key: result.key,
+      initialized: true // Set our initialized flag
+    };
+
+    writeInitInfo(initData); // Write it to a file
   });
 }
 
@@ -71,10 +89,9 @@ function help(options) {
 
 // Inform the control daemon that the node is ready
 function start() {
-  axios.put(config.controlDaemonAddress + ":" + config.controlDaemonPort +
-      "/api/status/", {
-        status: true
-      })
+  axios.put(daemonAddress + "/api/status/", {
+      status: true
+    })
     .then(function(response) {
       console.log(response);
     })
@@ -88,10 +105,9 @@ function start() {
 
 // Inform the control daemon that the node is no longer ready
 function stop() {
-  axios.put(config.controlDaemonAddress + ":" + config.controlDaemonPort +
-      "/api/status/", {
-        status: false
-      })
+  axios.put(daemonAddress + "/api/status/", {
+      status: false
+    })
     .then(function(response) {
       console.log(response);
     })
@@ -105,8 +121,7 @@ function stop() {
 
 // Get the current status of the node daemons
 function status() {
-  axios.get(config.controlDaemonAddress + ":" + config.controlDaemonPort +
-      "/api/status/")
+  axios.get(daemonAddress + "/api/status/")
     .then(function(response) {
       console.log(response);
     })
@@ -120,20 +135,80 @@ function status() {
 
 // Join the beta pool
 function joinBetaPool() {
+  var initInfo = getInitInfo(); // Grab the information from initialization
 
+  if (initInfo.initialized) {
+    axios.post(daemonAddress + "/api/pools/beta", {
+        status: false
+      })
+      .then(function(response) {
+        console.log(response);
+      })
+      .catch(function(error) {
+        console.log(colors.red(
+          "Woah an error! Make sure your daemon is running and can be connected to"
+        ));
+        console.log(error);
+      });
+  } else {
+    console.log(colors.red(
+      "Error: You need to initialize your node first. Run gladius-node init to do this."
+    ))
+  }
 }
 
 // List all available pools
 function listPools() {
-
+  axios.get(daemonAddress + "/api/pools/")
+    .then(function(response) {
+      console.log(response);
+    })
+    .catch(function(error) {
+      console.log(colors.red(
+        "Woah an error! Make sure your daemon is running and can be connected to"
+      ));
+      console.log(error);
+    });
 }
 
 // Check the status of current applications
 function checkJoin() {
+  axios.get(daemonAddress + "/api/pools/check/beta")
+    .then(function(response) {
+      console.log(response);
+    })
+    .catch(function(error) {
+      console.log(colors.red(
+        "Woah an error! Make sure your daemon is running and can be connected to"
+      ));
+      console.log(error);
+    });
+}
 
+// Reset the init.json file for testing or for problem installations.
+function reset() {
+  var json = JSON.stringify({
+    email: "",
+    name: "",
+    bio: "",
+    key: "",
+    initialized: false
+  });
+  fs.writeFileSync(appDir + "/init.json", json);
+  console.log(colors.blue("Reset init.json"));
 }
 
 /******************************************************************************/
+function writeInitInfo(info) {
+  var json = JSON.stringify(info);
+  fs.writeFileSync(appDir + "/init.json", json);
+}
+
+
+function getInitInfo() {
+  return JSON.parse(fs.readFileSync(appDir + "/init.json"));
+}
+
 
 // Create options for the user where description is the description of the
 // argument and toCall is a function.
@@ -169,8 +244,12 @@ var options = {
   "config-location": {
     description: "Returns the location of the config.js file",
     toCall: function() {
-      console.log(appDir + "config.js")
+      console.log(appDir + "/config.js")
     }
+  },
+  "reset-init": {
+    description: "Resets init file (for testing or problem installations)",
+    toCall: reset
   },
   "--help": {
     description: "Show this menu",
@@ -182,7 +261,7 @@ var options = {
 
 // Check the up status of the daemon
 function checkDaemon() {
-  // Check the status of the daemon from the status method
+  // TODO: Check the status of the daemon from the status method
 
   return true;
 }
