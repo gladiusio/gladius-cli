@@ -1,0 +1,30 @@
+{
+  "name": "gladius-cli",
+  "version": "1.0.0",
+  "description": "The Gladius node command line interface, entry point for the Gladius system",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "gladius-node": "./index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gladiusio/gladius-cli.git"
+  },
+  "keywords": [
+    "gladius",
+    "gladius-cli",
+    "gladius-node"
+  ],
+  "author": "Alex Godwin",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/gladiusio/gladius-cli/issues"
+  },
+  "homepage": "https://github.com/gladiusio/gladius-cli#readme",
+  "dependencies": {
+    "prompt": "^1.0.0"
+  }
+}
