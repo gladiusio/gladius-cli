@@ -255,7 +255,7 @@ var options = {
     description: "Resets init file (for testing or problem installations)",
     toCall: function() {
       reset();
-      console.log(color.blue("Reset init.json"));
+      console.log(colors.blue("Reset init.json"));
     }
   },
   "--help": {
