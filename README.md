@@ -46,7 +46,7 @@ networking and transactions from taking place.
 ## Configuration
 To configure features of the Gladius node software that would normally not be
 used by the average user, run `gladius-node config-location` to get the location
-of the "config.json" file that dictates parameters like ports and the IP address
+of the "config.js" file that dictates parameters like ports and the IP address
 of the daemon.   
 
 ## Notes and warnings

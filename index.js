@@ -21,7 +21,7 @@ var appDir = path.dirname(require.main.filename); // Get where this file is
 console.log(appDir);
 
 prompt.message = colors.blue("[Gladius-Node]");
-prompt.delimiter = colors.green(" ");
+prompt.delimiter = " ";
 
 prompt.start();
 
@@ -53,7 +53,7 @@ function init() {
 
   // Prompt and forward data
   prompt.get(schema, function(err, result) {
-    // TODO: Get the data like result.name result.email and forward using REST
+    // TODO: Save the data to a config.json file
   });
 }
 
@@ -96,7 +96,8 @@ function checkJoin() {
 
 /******************************************************************************/
 
-// Create options for the user
+// Create options for the user where description is the description of the
+// argument and toCall is a function.
 var options = {
   "init": {
     description: "Gathers information about the user as well as configuration data.",
@@ -115,7 +116,7 @@ var options = {
     toCall: status
   },
   "list-pools": {
-    description: "List all available pools",
+    description: "List all available pools from the marketplace",
     toCall: listPools
   },
   "join-pool": {
@@ -129,7 +130,7 @@ var options = {
   "config-location": {
     description: "Returns the location of the config.js file",
     toCall: function() {
-      console.log()
+      console.log(appDir + "config.js")
     }
   },
   "--help": {
