@@ -12,6 +12,7 @@ var prompt = require("prompt");
 var colors = require("colors/safe");
 var fs = require("fs");
 var path = require("path");
+var axios = require("axios");
 
 var config = require("./config.js") // Load our config file
 
@@ -59,14 +60,26 @@ function init() {
 
 // Build the help menu from the options
 function help(options) {
-  console.log("\n------Available arguments------ \n" + Object.keys(options).map(function(key) {
-    return ("\n\n" + colors.blue(key) + ": " + options[key].description);
-  }).join(""));
+  console.log(colors.blue("\n--------------Available arguments-------------- \n") +
+    Object.keys(options).map(
+      function(key) {
+        return ("\n\n" + colors.blue(key) + ": " + options[key].description);
+      }
+    ).join(""));
 }
 
 // Inform the control daemon that the node is ready
 function start() {
-
+  axios.put(config.controlDaemonAddress + ":" + config.controlDaemonPort + "/api/status/", {
+      status: true
+    })
+    .then(function(response) {
+      console.log(response);
+    })
+    .catch(function(error) {
+      console.log(colors.red("Woah an error! Make sure your daemon is running and can be connected to"));
+      console.log(error);
+    });
 }
 
 // Inform the control daemon that the node is no longer ready
@@ -157,8 +170,8 @@ if (checkDaemon()) {
   if (argument in options) {
     options[argument].toCall();
   } else {
-    console.log("Unknown (or no) argument, please use --help to see available arguments")
+    console.log(colors.red("Unknown (or no) argument, please use --help to see available arguments"));
   }
 } else {
-  console.log(colors.red("Cannot connect to the Gladius daemon. See setup instructions here: https://github.com/gladiusio"));;
+  console.log(colors.red("Cannot connect to the Gladius daemon. See setup instructions here: https://github.com/gladiusio"));
 }
