@@ -151,6 +151,7 @@ function checkDaemon() {
 // Get the argument that the user provided
 var argument = process.argv[2];
 
+
 // Run the CLI
 if (checkDaemon()) {
   if (argument in options) {
