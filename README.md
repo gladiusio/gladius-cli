@@ -12,7 +12,8 @@ CLI.
 
 `npm install -g .`
 
-Finally, install the daemon using either [docker](https://gladius.io) or
+Finally, install the daemon using either
+[docker](https://github.com/gladiusio/gladius-node-app) or
 [directly](https://gladius.io)
 
 ## Setup
@@ -51,7 +52,7 @@ of the daemon.
 
 ## Notes and warnings
 You can see a full list of the commands available (some may not be fully
-  functional) by running `gladius-node --help`
+ functional) by running `gladius-node --help`
 
 
 **Warning!** This is the beta implementation of the Gladius node, and as such it
