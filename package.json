@@ -1,7 +1,7 @@
 {
   "name": "gladius-cli",
   "version": "0.1.1-beta",
-  "description": "The Gladius node command line interface, entry point for the Gladius system",
+  "description": "The Gladius node command line interface, an entry point for the Gladius system",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
