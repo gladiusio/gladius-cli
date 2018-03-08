@@ -200,7 +200,6 @@ function reset() {
     initialized: false
   });
   fs.writeFileSync(appDir + "/init.json", json);
-  console.log(colors.blue("Reset init.json"));
 }
 
 /******************************************************************************/
@@ -254,7 +253,10 @@ var options = {
   },
   "reset-init": {
     description: "Resets init file (for testing or problem installations)",
-    toCall: reset
+    toCall: function() {
+      reset();
+      console.log(color.blue("Reset init.json"));
+    }
   },
   "--help": {
     description: "Show this menu",
