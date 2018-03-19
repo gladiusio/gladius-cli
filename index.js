@@ -8,6 +8,8 @@ successfully completed this you can run: "gladius-node start"
 Requires the Gladius daemon to be installed and running to opperate.
 */
 
+//We should have color (yellow probably) that indicates that the result of executing this action will incur gas costs
+
 var prompt = require("prompt");
 var colors = require("colors/safe");
 var fs = require("fs");
@@ -18,7 +20,7 @@ var config = require("./config.js") // Load our config file
 let appDir = path.dirname(require.main.filename); // Get where this file is
 let daemonAddress = config.controlDaemonAddress + ":" + config.controlDaemonPort;
 let userData;
-let envData = JSON.parse(fs.readFileSync(appDir + "/env_config.json"));
+let envData = JSON.parse(fs.readFileSync(appDir + "/envData.json")); //for now have this file already made
 
 // Set up prompt
 prompt.message = colors.blue("[Gladius-Node]");
@@ -27,8 +29,8 @@ prompt.delimiter = " ";
 prompt.start();
 
 
-// Check on init.json file
-if (!fs.existsSync(appDir + "/init.json")) {
+// Check on userData.json file
+if (!fs.existsSync(appDir + "/userData.json")) {
   reset();
 }
 
@@ -75,7 +77,7 @@ var options = {
     description: "Resets init file (for testing or problem installations)",
     toCall: function() {
       reset();
-      console.log(colors.blue("Reset init.json"));
+      console.log(colors.blue("Reset userData.json"));
     }
   },
   "--help": {
@@ -137,15 +139,40 @@ function init() {
       pgpKey: result.pgpKey,
       initialized: true // Set our initialized flag
     };
-    writeInitInfo(userData); // Write it to a file
+    createNode(); //generate a node contract
   });
+
 }
 
+/**
+* Create a node based on the onboarding information
+*/
 function createNode() {
   axios.post(daemonAddress + "/api/node/create", {
-    name: userData.name,
-    email: userData.email,
-    status: "active"
+    //no data required, data is set AFTER you create the initial node contract
+  })
+  .then(function(res){
+    console.log(res);
+    userData.nodeAddress = res.data.address
+    writeInitInfo(userData); // Write it to a file
+  })
+  .catch(function(err){
+    console.log(err);
+  })
+}
+
+/**
+* Set the data for the node based on onboarding info
+*/
+function setNodeData() {
+  axios.post(daemonAddress + "/api/node/" + userData.nodeAddress + "/data", {
+    //no data required, data is set AFTER you create the initial node contract
+  })
+  .then(function(res){
+    console.log(res);
+  })
+  .catch(function(err){
+    console.log(err);
   })
 }
 
@@ -268,7 +295,7 @@ function checkJoin() {
     });
 }
 
-// Reset the init.json file for testing or for problem installations.
+// Reset the userData.json file for testing or for problem installations.
 function reset() {
   var json = JSON.stringify({
     email: "",
@@ -277,17 +304,17 @@ function reset() {
     key: "",
     initialized: false
   });
-  fs.writeFileSync(appDir + "/init.json", json);
+  fs.writeFileSync(appDir + "/userData.json", json);
 }
 
 function writeInitInfo(info) {
   var json = JSON.stringify(info);
-  fs.writeFileSync(appDir + "/init.json", json);
+  fs.writeFileSync(appDir + "/userData.json", json);
 }
 
 
 function getInitInfo() {
-  return JSON.parse(fs.readFileSync(appDir + "/init.json"));
+  return JSON.parse(fs.readFileSync(appDir + "/userData.json"));
 }
 
 
@@ -316,7 +343,7 @@ var options = {
   },
   "join-pool": {
     description: "Join the beta pool (will have arguments in future to specify pool to join)",
-    toCall: joinBetaPool // Eventually replace with arbitrary pool upon launch
+    toCall: joinPool // Eventually replace with arbitrary pool upon launch
   },
   "check-join": {
     description: "Check the status of your applications.",
@@ -332,7 +359,7 @@ var options = {
     description: "Resets init file (for testing or problem installations)",
     toCall: function() {
       reset();
-      console.log(colors.blue("Reset init.json"));
+      console.log(colors.blue("Reset userData.json"));
     }
   },
   "--help": {
