@@ -58,3 +58,4 @@ typings/
 .env
 envData.json
 userData.json
+settings.json
