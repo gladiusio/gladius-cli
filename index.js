@@ -99,6 +99,53 @@ var options = {
 }
 
 /**
+* Start accepting connections, right now just posts the settings to start the server
+*/
+function start() {
+  let schema = {
+    properties: {
+      passphrase: {
+        description: "Please enter the passphrase for your PGP private key:",
+        required: true,
+        hidden: true
+      }
+    }
+  };
+
+  // Prompt and store the data
+  prompt.get(schema, function(err, result) {
+    axios.post(daemonAddress + "/api/settings/start", {
+      "provider": "http://127.0.0.1:9545",
+      "privateKey": pvtKey.toString(),
+      "pgpKey": pgpKey.toString().replace(/\r?\n|\r/g,"\\n"),
+      "passphrase": result.passphrase,
+      "marketAddress": "0x345ca3e014aaf5dca488057592ee47305d9b3e10",
+      "nodeFactoryAddress": "0xb9a219631aed55ebc3d998f17c3840b7ec39c0cc"
+    })
+      .then(function(res) {
+        status()
+      })
+      .catch(function(err) {
+        console.log(err);
+        status()
+      });
+  });
+}
+
+/**
+* Check status of the BC control daemon
+*/
+function status() {
+  axios.get(daemonAddress + "/api/status/")
+    .then(function(res) {
+      console.log(colors.blue("Server is running!"));
+    })
+    .catch(function(err) {
+      console.log(colors.red("Server is down"));
+    });
+}
+
+/**
 * Prompt the user for information about themselves
 * just writes to the userData.json
 */
@@ -173,59 +220,18 @@ function setNodeData() {
 * See status of the node daemon
 */
 function joinPool() {
-  var initInfo = getInitInfo(); // Grab the information from initialization
-
-  if (initInfo.initialized) {
-    axios.post(daemonAddress + "/api/pools/beta", {
-        status: false
-      })
-      .then(function(res) {
-        console.log(res);
-      })
-      .catch(function(err) {
-        console.log(colors.red(
-          "Woah an err! Make sure your daemon is running and can be connected to"
-        ));
-        console.log(err);
-      });
-  } else {
-    console.log(colors.red(
-      "err: You need to initialize your node first. Run gladius-node init to do this."
-    ))
-  }
-}
-
-/**
-* Start accepting connections, right now just posts the settings to start the server
-*/
-function start() {
   let schema = {
     properties: {
-      passphrase: {
-        description: "Please enter the passphrase for your PGP private key:",
-        required: true,
-        hidden: true
+      poolAddress: {
+        description: "Please enter the address of the pool you want to join: ",
+        required: true
       }
     }
   };
 
   // Prompt and store the data
   prompt.get(schema, function(err, result) {
-    axios.post(daemonAddress + "/api/settings/start", {
-      "provider": "http://127.0.0.1:9545",
-      "privateKey": pvtKey.toString(),
-      "pgpKey": pgpKey.toString().replace(/\r?\n|\r/g,"\\n"),
-      "passphrase": result.passphrase,
-      "marketAddress": "0x345ca3e014aaf5dca488057592ee47305d9b3e10",
-      "nodeFactoryAddress": "0xb9a219631aed55ebc3d998f17c3840b7ec39c0cc"
-    })
-      .then(function(res) {
-        console.log(colors.blue("Server is running!"));
-      })
-      .catch(function(err) {
-        console.log(colors.red("Have you set your keys in the ./keys folder yet?"));
-        console.log(err);
-      });
+    axios.post(daemonAddress + "/api/node/" + userData.nodeAddress + "/pool/" + result.poolAddress)
   });
 }
 
@@ -238,20 +244,6 @@ function stop() {
     })
     .then(function(res) {
       console.log(res);
-    })
-    .catch(function(err) {
-      console.log(colors.red(
-        "Woah an err! Make sure your daemon is running and can be connected to"
-      ));
-      console.log(err);
-    });
-}
-
-// Get the current status of the node daemons
-function status() {
-  axios.get(daemonAddress + "/api/status/")
-    .then(function(res) {
-      console.log(res.data);
     })
     .catch(function(err) {
       console.log(colors.red(
@@ -274,7 +266,6 @@ function getSettings() {
 function getKeys() {
   console.log("private and pgp keys are located in ./keys");
 }
-
 
 /**
 * List pools
