@@ -18,13 +18,10 @@ var axios = require("axios");
 var config = require("./config.js") // Load our config file
 
 let appDir = path.dirname(require.main.filename); // Get where this file is
-let daemonAddress = config.controlDaemonAddress + ":" + config.controlDaemonPort;
+let daemonAddress = config.network.controlDaemonAddress + ":" + config.network.controlDaemonPort;
 let pgpKey = fs.readFileSync("./keys/pgpKey.txt","utf8") //pgp key
 let pvtKey = fs.readFileSync("./keys/pvtKey.txt","utf8") //ETH wallet private key
 let passphrase;
-
-let userData; //data object w user info
-let envData; //data object w env info
 
 // Set up prompt
 prompt.message = colors.blue("[Gladius-Node]");
@@ -32,22 +29,29 @@ prompt.delimiter = " ";
 
 prompt.start();
 
-
-// Check on userData.json file
-if (!fs.existsSync(appDir + "/userData.json")) {
+if(!fs.existsSync("./nodeFile.json")) {
   reset();
 }
 
-// Create options for the user where description is the description of the
-// argument and toCall is a function.
+let nodeFile = require("./nodeFile.json")
+
+/**
+* Create options for the user where description is the description of the
+* argument and toCall is a function.
+*/
+
 var options = {
   "init": {
     description: "Gathers information about the user as well as configuration data.",
     toCall: init
   },
-  "start": {
-    description: "Start the Gladius node, and inform the pool of this.",
-    toCall: start
+  "sendSettings": {
+    description: "",
+    toCall: postSettings
+  }
+  "create": {
+    description: "Create a node",
+    toCall: createNode
   },
   "stop": {
     description: "Stop the Gladius node, and inform the pool of this.",
@@ -61,13 +65,9 @@ var options = {
     description: "List all available pools from the marketplace",
     toCall: listPools
   },
-  "join-pool": {
-    description: "Join the beta pool (will have arguments in future to specify pool to join)",
-    toCall: joinPool // Eventually replace with arbitrary pool upon launch
-  },
-  "check-join": {
-    description: "Check the status of your applications.",
-    toCall: checkJoin
+  "apply": {
+    description: "Apply to a pool",
+    toCall: applyPool // Eventually replace with arbitrary pool upon launch
   },
   "config-location": {
     description: "Returns the location of the config.js file",
@@ -75,11 +75,11 @@ var options = {
       console.log(appDir + "/config.js")
     }
   },
-  "reset-init": {
+  "reset": {
     description: "Resets init file (for testing or problem installations)",
     toCall: function() {
       reset();
-      console.log(colors.blue("Reset userData.json"));
+      console.log(colors.blue("Reset nodeFile.json"));
     }
   },
   "settings": {
@@ -89,6 +89,22 @@ var options = {
   "keys": {
     description: "Location of your key files",
     toCall: getKeys
+  },
+  "app-status": {
+    description: "Status of your application to a pool",
+    toCall: getPoolStatus
+  },
+  "set-node": {
+    description: "Push information to the Node",
+    toCall: setNodeData
+  },
+  "get-node": {
+    description: "Get information for this Node",
+    toCall: getNodeData
+  },
+  "test": {
+    description: "Test random functions",
+    toCall: test
   },
   "--help": {
     description: "Show this menu",
@@ -101,7 +117,7 @@ var options = {
 /**
 * Start accepting connections, right now just posts the settings to start the server
 */
-function start() {
+function postSettings() {
   let schema = {
     properties: {
       passphrase: {
@@ -147,7 +163,7 @@ function status() {
 
 /**
 * Prompt the user for information about themselves
-* just writes to the userData.json
+* just writes to the nodeFile.json
 */
 function init() {
   // Create a schema for the paremeters to be asked
@@ -173,53 +189,70 @@ function init() {
   // Prompt and store the data
   prompt.get(schema, function(err, result) {
     console.log(colors.blue("\nRun gladius-node --help for more actions"));
-    userData = {
+    nodeFile.userData = {
       email: result.email,
       name: result.name,
       bio: result.bio,
       initialized: true // Set our initialized flag
     };
+    writeToFile("nodeFile", nodeFile); // Write it to a file
+    console.log(colors.green("User profile created! You may now create a node with gladius-node create"));
   });
-
 }
 
 /**
 * Create a new Node smart contract (no data set)
 */
 function createNode() {
+  postSettings(
   axios.post(daemonAddress + "/api/node/create", {
     //no data required, data is set AFTER you create the initial node contract
   })
   .then(function(res){
     console.log(res.data);
-    userData.nodeAddress = res.data.address
-    writeToFile("userData",userData); // Write it to a file
+    nodeFile.address = res.data.address
+    writeToFile("nodeFile", nodeFile); // Write it to a file
+    console.log(colors.green("Node successfully created!"));
+
+    //after completion
+
   })
   .catch(function(err){
     console.log(err);
-
-  })
+  }))
 }
 
 /**
 * Set the data for the node based on onboarding info
 */
 function setNodeData() {
-  axios.post(daemonAddress + "/api/node/" + userData.nodeAddress + "/data", {
-    //no data required, data is set AFTER you create the initial node contract
-  })
+  axios.post(daemonAddress + "/api/node/" + nodeFile.address + "/data", nodeFile.userData)
   .then(function(res){
-    console.log(res.data);
+    console.log(colors.green("Node data successfully saved!"));
   })
   .catch(function(err){
+    console.log(colors.red("Setting Node data failed!"));
     console.log(err);
   })
 }
 
-/** WIP - should be changed to just join pool
+/**
+* Get the data for the node based on onboarding info
+*/
+function getNodeData() {
+  axios.get(daemonAddress + "/api/node/" + nodeFile.address)
+  .then(function(res) {
+    console.log(res.data);
+  })
+  .catch(function(err) {
+    console.log(err);
+  })
+}
+
+/**
 * See status of the node daemon
 */
-function joinPool() {
+function applyPool() {
   let schema = {
     properties: {
       poolAddress: {
@@ -231,7 +264,13 @@ function joinPool() {
 
   // Prompt and store the data
   prompt.get(schema, function(err, result) {
-    axios.post(daemonAddress + "/api/node/" + userData.nodeAddress + "/pool/" + result.poolAddress)
+    axios.post(daemonAddress + "/api/node/" + nodeFile.address + "/apply/" + result.poolAddress,{})
+    .then(function(res) {
+      console.log(colors.green("Application sent to Pool! Use gladius-node app-status to check your application status"));
+    })
+    .catch(function(err) {
+      console.log(err.data);
+    })
   });
 }
 
@@ -253,21 +292,66 @@ function stop() {
     });
 }
 
+/**
+* Get the data for the node env. PVT key, PGP, etc...
+*/
 function getSettings() {
   axios.get(daemonAddress + "/api/settings")
   .then(function(res) {
-    console.log(res);
+    console.log(res.data);
   })
   .catch(function(err) {
     console.log(err);
   })
 }
 
+/**
+* Key info
+*/
 function getKeys() {
   console.log("private and pgp keys are located in ./keys");
 }
 
 /**
+* Application status for this node's pools
+*/
+function getPoolStatus() {
+  let schema = {
+    properties: {
+      poolAddress: {
+        description: "Please enter the address of the pool you want to check on: ",
+        required: true
+      }
+    }
+  };
+
+  // Prompt and store the data
+  prompt.get(schema, function(err, result) {
+    axios.get(daemonAddress + "/api/node/" + nodeFile.address + "/status/" + result.poolAddress)
+    .then(function(res) {
+      let poolStatus;
+
+      switch(res.data.status) {
+        case "Rejected":
+          poolStatus = (colors.red("[Status: Rejected]"));
+          break;
+        case "Pending":
+          poolStatus = (colors.yellow("[Status: Pending]"));
+          break;
+        case "Approved":
+          poolStatus = (colors.green("[Status: Approved]"));
+          break;
+      }
+      console.log();
+      console.log("Pool: " + result.poolAddress + "\t" + poolStatus);
+    })
+    .catch(function(err){
+      console.log(err);
+    })
+  });
+}
+
+/** WIP - Missing Endpoint
 * List pools
 */
 function listPools() {
@@ -283,18 +367,11 @@ function listPools() {
     });
 }
 
-// Check the status of current applications
-function checkJoin() {
-  axios.get(daemonAddress + "/api/pools/check/beta")
-    .then(function(res) {
-      console.log(res);
-    })
-    .catch(function(err) {
-      console.log(colors.red(
-        "Woah an err! Make sure your daemon is running and can be connected to"
-      ));
-      console.log(err);
-    });
+/*
+* For testing rando functions
+*/
+function test() {
+  console.log(nodeFile.address);
 }
 
 /**
@@ -311,40 +388,37 @@ function help(options) {
     ).join(""));
 }
 
-// Reset the userData.json file for testing or for problem installations.
-function reset() {
-  var json = JSON.stringify({
-    email: "",
-    name: "",
-    bio: "",
-    key: "",
-    initialized: false
-  });
-  fs.writeFileSync(appDir + "/userData.json", json);
-}
-
+/*
+* Helper function for writing to files
+*/
 function writeToFile(name, data) {
   var json = JSON.stringify(data);
   fs.writeFileSync(appDir + "/"+name+".json", json);
 }
 
-function getInitInfo() {
-  return JSON.parse(fs.readFileSync(appDir + "/userData.json"));
-}
+/*
+* Reset the nodeFile
+*/
+function reset() {
+  let data = {
+    "userData":
+      {
+        "email":"",
+        "name":"",
+        "bio":"",
+        "initialized":false
+      },
+    "address":""
+  }
 
-// Check the up status of the daemon
-function checkDaemon() {
-  // TODO: Check the status of the daemon from the status method
-
-  return true;
+  fs.writeFileSync("./nodeFile.json", JSON.stringify(data))
 }
 
 // Get the argument that the user provided
 var argument = process.argv[2];
 
-
 // Run the CLI
-if (checkDaemon()) {
+if (true) {
   if (argument in options) {
     options[argument].toCall();
   } else {
