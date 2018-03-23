@@ -16,11 +16,13 @@ var fs = require("fs");
 var path = require("path");
 var axios = require("axios");
 var config = require("./config.js") // Load our config file
+var Spinner = require('cli-spinner').Spinner;
 
 let appDir = path.dirname(require.main.filename); // Get where this file is
 let daemonAddress = config.network.controlDaemonAddress + ":" + config.network.controlDaemonPort;
 let pgpKey = fs.readFileSync("./keys/pgpKey.txt","utf8") //pgp key
 let pvtKey = fs.readFileSync("./keys/pvtKey.txt","utf8") //ETH wallet private key
+let settings = require("./settings.json")
 let passphrase;
 
 // Set up prompt
@@ -45,54 +47,36 @@ var options = {
     description: "Gathers information about the user as well as configuration data.",
     toCall: init
   },
-  "sendSettings": {
-    description: "",
-    toCall: postSettings
-  }
   "create": {
     description: "Create a node",
-    toCall: createNode
+    toCall: create
   },
-  "stop": {
-    description: "Stop the Gladius node, and inform the pool of this.",
-    toCall: stop
+  "apply": {
+    description: "Apply to a pool",
+    toCall: apply // Eventually replace with arbitrary pool upon launch
+  },
+  "check": {
+    description: "Status of your application to a pool",
+    toCall: getPoolStatus
   },
   "status": {
     description: "Get's the current status of the node daemons",
     toCall: status
   },
-  "list-pools": {
-    description: "List all available pools from the marketplace",
-    toCall: listPools
-  },
-  "apply": {
-    description: "Apply to a pool",
-    toCall: applyPool // Eventually replace with arbitrary pool upon launch
-  },
-  "config-location": {
+  "dirs": {
     description: "Returns the location of the config.js file",
-    toCall: function() {
-      console.log(appDir + "/config.js")
-    }
+    toCall: locations
   },
   "reset": {
     description: "Resets init file (for testing or problem installations)",
     toCall: function() {
       reset();
-      console.log(colors.blue("Reset nodeFile.json"));
+      console.log(colors.blue("nodeFile.json has been reset"));
     }
   },
   "settings": {
     description: "Show settings",
     toCall: getSettings
-  },
-  "keys": {
-    description: "Location of your key files",
-    toCall: getKeys
-  },
-  "app-status": {
-    description: "Status of your application to a pool",
-    toCall: getPoolStatus
   },
   "set-node": {
     description: "Push information to the Node",
@@ -115,57 +99,12 @@ var options = {
 }
 
 /**
-* Start accepting connections, right now just posts the settings to start the server
-*/
-function postSettings() {
-  let schema = {
-    properties: {
-      passphrase: {
-        description: "Please enter the passphrase for your PGP private key:",
-        required: true,
-        hidden: true
-      }
-    }
-  };
-
-  // Prompt and store the data
-  prompt.get(schema, function(err, result) {
-    axios.post(daemonAddress + "/api/settings/start", {
-      "provider": "http://127.0.0.1:9545",
-      "privateKey": pvtKey.toString(),
-      "pgpKey": pgpKey.toString().replace(/\r?\n|\r/g,"\\n"),
-      "passphrase": result.passphrase,
-      "marketAddress": "0x345ca3e014aaf5dca488057592ee47305d9b3e10",
-      "nodeFactoryAddress": "0xb9a219631aed55ebc3d998f17c3840b7ec39c0cc"
-    })
-      .then(function(res) {
-        status()
-      })
-      .catch(function(err) {
-        console.log(err);
-        status()
-      });
-  });
-}
-
-/**
-* Check status of the BC control daemon
-*/
-function status() {
-  axios.get(daemonAddress + "/api/status/")
-    .then(function(res) {
-      console.log(colors.blue("Server is running!"));
-    })
-    .catch(function(err) {
-      console.log(colors.red("Server is down"));
-    });
-}
-
-/**
 * Prompt the user for information about themselves
 * just writes to the nodeFile.json
 */
 function init() {
+  // checkKeys() //make sure the keys are there before doing this
+
   // Create a schema for the paremeters to be asked
   let schema = {
     properties: {
@@ -188,7 +127,6 @@ function init() {
 
   // Prompt and store the data
   prompt.get(schema, function(err, result) {
-    console.log(colors.blue("\nRun gladius-node --help for more actions"));
     nodeFile.userData = {
       email: result.email,
       name: result.name,
@@ -203,35 +141,164 @@ function init() {
 /**
 * Create a new Node smart contract (no data set)
 */
-function createNode() {
-  postSettings(
-  axios.post(daemonAddress + "/api/node/create", {
-    //no data required, data is set AFTER you create the initial node contract
+function create() {
+  postSettings(function () {
+    axios.post(daemonAddress + "/api/node/create", {
+      //no data required, data is set AFTER you create the initial node contract
+    })
+    .then(function(res){
+      creationStatus(res.data.txHash)
+    })
+    .catch(function(err){
+      console.log(err);
+      console.log(colors.red("There was a problem creating a node"));
+    })
   })
-  .then(function(res){
-    console.log(res.data);
-    nodeFile.address = res.data.address
-    writeToFile("nodeFile", nodeFile); // Write it to a file
-    console.log(colors.green("Node successfully created!"));
+}
 
-    //after completion
+/**
+* See status of the node daemon
+*/
+function apply() {
+  let schema = {
+    properties: {
+      poolAddress: {
+        description: "Please enter the address of the pool you want to join: ",
+        required: true
+      }
+    }
+  };
 
+  // Prompt and store the data
+  prompt.get(schema, function(err, result) {
+    axios.post(daemonAddress + "/api/node/" + nodeFile.address + "/apply/" + result.poolAddress, nodeFile.userData)
+    .then(function(res) {
+      console.log(colors.green("Application sent to Pool! Use gladius-node check to check your application status"));
+    })
+    .catch(function(err) {
+      console.log(err.data);
+    })
+  });
+}
+
+/**
+* Start accepting connections, right now just posts the settings to start the server
+*/
+function postSettings(callback) {
+  let schema = {
+    properties: {
+      passphrase: {
+        description: "Please enter the passphrase for your PGP private key:",
+        required: true,
+        hidden: true
+      }
+    }
+  };
+
+  // Prompt and store the data
+  prompt.get(schema, function(err, result) {
+    axios.post(daemonAddress + "/api/settings/start", {
+      "provider": settings.provider,
+      "privateKey": pvtKey.toString(),
+      "pgpKey": pgpKey.toString().replace(/\r?\n|\r/g,"\\n"),
+      "marketAddress": settings.marketAddress,
+      "nodeFactoryAddress": settings.nodeFactoryAddress
+    })
+      .then(callback)
+      .catch(function(err) {
+        console.log(err);
+        console.log(colors.red("There was a problem posting your settings"));
+      });
+  });
+}
+
+/**
+* Check status of the BC control daemon
+*/
+function status() {
+  axios.get(daemonAddress + "/api/status/")
+    .then(function(res) {
+      console.log(colors.blue("Server is running!"));
+    })
+    .catch(function(err) {
+      console.log(colors.red("Server is down"));
+    });
+}
+
+
+
+
+/**
+* Check on status of creating a transaction and halt i/o until done
+*/
+function creationStatus(tx) {
+  let status = 0;
+
+  axios.get(daemonAddress + "/api/status/tx/" + tx)
+  .then(function(res) {
+    if(res.data.receipt) {
+      if(res.data.receipt.status == "0x0") {
+        status = 0 //Status: Failed
+      }
+      else if (res.data.receipt.status = "0x1") {
+        status = 1 //Status: Success
+      }
+      else {
+        status = 3 //Status: Unknown
+      }
+    }
+    else {
+      status = 2 //Status: Pending
+    }
+
+    if(status == 2) {
+      creationStatus(tx, false)
+    }
+
+    let _status;
+
+    switch(status) {
+      case 0:
+        _status = colors.red("[Failed]")
+        process.stdout.write(colors.red("[Gladius Node]")+ " Transaction: " + tx + "\t" + _status)
+        break;
+      case 1:
+        _status = colors.green("[Success]")
+        process.stdout.write(colors.green("[Gladius Node]")+ " Transaction: " + tx + "\t" + _status)
+        break;
+      case 2:
+        _status = colors.yellow("[Pending]"+"\r")
+        process.stdout.write(colors.yellow("[Gladius Node]")+ " Transaction: " + tx + "\t" + _status)
+        break;
+      default:
+        _status = "[Unknown]"
+        process.stdout.write(colors.blue("[Gladius Node]")+ " Transaction: " + tx + "\t" + _status)
+        break;
+    }
+
+    if (status == 1) {
+      // nodeFile.address == result
+      // writeToFile("nodeFile", nodeFile)
+      //CALL setNodeData
+    }
   })
-  .catch(function(err){
+  .catch(function(err) {
     console.log(err);
-  }))
+  })
 }
 
 /**
 * Set the data for the node based on onboarding info
 */
 function setNodeData() {
-  axios.post(daemonAddress + "/api/node/" + nodeFile.address + "/data", nodeFile.userData)
+  axios.post(daemonAddress + "/api/node/" + nodeFile.address + "/data/", nodeFile.userData)
   .then(function(res){
-    console.log(colors.green("Node data successfully saved!"));
+    console.log();
+    console.log(colors.green("[Gladius-Node]") + " Node data successfully saved!");
   })
   .catch(function(err){
-    console.log(colors.red("Setting Node data failed!"));
+    console.log();
+    console.log(colors.red("[Gladius-Node]") + " Error setting Node data");
     console.log(err);
   })
 }
@@ -249,30 +316,6 @@ function getNodeData() {
   })
 }
 
-/**
-* See status of the node daemon
-*/
-function applyPool() {
-  let schema = {
-    properties: {
-      poolAddress: {
-        description: "Please enter the address of the pool you want to join: ",
-        required: true
-      }
-    }
-  };
-
-  // Prompt and store the data
-  prompt.get(schema, function(err, result) {
-    axios.post(daemonAddress + "/api/node/" + nodeFile.address + "/apply/" + result.poolAddress,{})
-    .then(function(res) {
-      console.log(colors.green("Application sent to Pool! Use gladius-node app-status to check your application status"));
-    })
-    .catch(function(err) {
-      console.log(err.data);
-    })
-  });
-}
 
 /** WIP - need to add a stop/kill endpoint
 * Stop accepting connections
@@ -292,6 +335,11 @@ function stop() {
     });
 }
 
+function locations() {
+  console.log("Keys: " + appDir + "/keys");
+  console.log("UserData: " + appDir + "/nodeFile.json");
+  console.log("Settings: " + appDir + "/settings.json");
+}
 /**
 * Get the data for the node env. PVT key, PGP, etc...
 */
@@ -310,6 +358,13 @@ function getSettings() {
 */
 function getKeys() {
   console.log("private and pgp keys are located in ./keys");
+}
+
+function checkKeys() {
+  if (pvtKey.toString() == "INSERT PRIVATE KEY TO THROWAWAY WALLET HERE" || pgpKey.toString() == "INSERT PGP PRIVATE KEY HERE") {
+    console.log(colors.red("[Gladius-Node] ") + "You have not pasted your keys in the ./keys folder, do this before proceeding");
+    process.exit(1);
+  }
 }
 
 /**
@@ -410,8 +465,7 @@ function reset() {
       },
     "address":""
   }
-
-  fs.writeFileSync("./nodeFile.json", JSON.stringify(data))
+  fs.writeFileSync("./nodeFile.json", JSON.stringify(data, null, 2))
 }
 
 // Get the argument that the user provided

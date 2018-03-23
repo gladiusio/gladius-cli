@@ -26,6 +26,7 @@
   "homepage": "https://github.com/gladiusio/gladius-cli#readme",
   "dependencies": {
     "axios": "^0.16.2",
+    "cli-spinner": "^0.2.8",
     "prompt": "^1.0.0"
   }
 }
