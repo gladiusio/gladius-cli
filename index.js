@@ -96,7 +96,7 @@ var options = {
 
 /**
 * Prompt the user for information about themselves
-* just writes to the nodeFile.json
+* just writes to the nodeFile.json TODO - pull in ip address
 */
 function init() {
   // checkKeys() //make sure the keys are there before doing this
@@ -196,7 +196,9 @@ function apply() {
   prompt.get(schema, function(err, result) {
     axios.post(daemonAddress + "/api/node/" + nodeFile.address + "/apply/" + result.poolAddress, nodeFile.userData)
     .then(function(res) {
-      console.log(colors.green("Application sent to Pool! Use gladius-node check to check your application status"));
+      creationStatus(res.data.tx, function(){
+        console.log(colors.green("[Gladius-Node] Application sent to Pool! Use " + colors.blue("gladius-node") + " check to check your application status"));
+      })
     })
     .catch(function(err) {
       console.log(err.data);
@@ -230,7 +232,6 @@ function postSettings(callback) {
     })
       .then(function() {
         callback()
-        console.log("Settings POSTed");
       })
       .catch(function(err) {
         console.log(err);
@@ -410,13 +411,13 @@ function getPoolStatus() {
 
       switch(res.data.status) {
         case "Rejected":
-          poolStatus = (colors.red("[Status: Rejected]"));
+          poolStatus = (colors.red("[Application Status: Rejected]"));
           break;
         case "Pending":
-          poolStatus = (colors.yellow("[Status: Pending]"));
+          poolStatus = (colors.yellow("[Application Status: Pending]"));
           break;
         case "Approved":
-          poolStatus = (colors.green("[Status: Approved]"));
+          poolStatus = (colors.green("[Application Status: Approved]"));
           break;
       }
       console.log();
