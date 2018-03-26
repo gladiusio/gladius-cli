@@ -82,10 +82,6 @@ var options = {
     description: "Push information to the Node",
     toCall: setNodeData
   },
-  "get-node": {
-    description: "Get information for this Node",
-    toCall: getNodeData
-  },
   "test": {
     description: "Test random functions",
     toCall: test
@@ -142,12 +138,39 @@ function init() {
 * Create a new Node smart contract (no data set)
 */
 function create() {
-  postSettings(function () {
+  postSettings(function() {
     axios.post(daemonAddress + "/api/node/create", {
       //no data required, data is set AFTER you create the initial node contract
     })
     .then(function(res){
-      creationStatus(res.data.txHash)
+      console.log(colors.blue("[Gladius-Node] ") + "Creating Node contract, please wait for tx to complete (this might take a couple of minutes) ");
+
+      creationStatus(res.data.txHash, function(err, res) {
+        if(res == colors.green("[Success]")) {
+          console.log();
+          console.log(colors.blue("[Gladius-Node] ") + "Setting Node data, please wait for tx to complete (this might take a couple of minutes) ");
+
+          getNodeAddress(function() {
+            setNodeData(function(tx) {
+              creationStatus(tx, function(err, res) {
+                if(res == colors.green("[Success]")) {
+                  console.log();
+                  console.log(colors.green("[Gladius-Node] " + "Node successfully created and ready to use"));
+                  console.log(colors.blue("[Gladius-Node] ") + "Use " + colors.blue("gladius-node apply") + " to apply to a pool");
+                }
+                else {
+                  console.log(colors.red("[Gladius-Node] ") + "There was a problem accessing your Node Contract");
+                }
+              })
+            })
+          })
+
+        }
+        else{
+          console.log(colors.red("[Gladius-Node] ") + "There was a problem creating your Node Contract");
+        }
+
+      })
     })
     .catch(function(err){
       console.log(err);
@@ -199,12 +222,16 @@ function postSettings(callback) {
   prompt.get(schema, function(err, result) {
     axios.post(daemonAddress + "/api/settings/start", {
       "provider": settings.provider,
-      "privateKey": pvtKey.toString(),
-      "pgpKey": pgpKey.toString().replace(/\r?\n|\r/g,"\\n"),
+      "privateKey": pvtKey.toString().replace(/\r?\n|\r/g,""),
+      "pgpKey": pgpKey.toString().replace(/\r?\n|\r/g,"\n"),
       "marketAddress": settings.marketAddress,
-      "nodeFactoryAddress": settings.nodeFactoryAddress
+      "nodeFactoryAddress": settings.nodeFactoryAddress,
+      "passphrase": result.passphrase
     })
-      .then(callback)
+      .then(function() {
+        callback()
+        console.log("Settings POSTed");
+      })
       .catch(function(err) {
         console.log(err);
         console.log(colors.red("There was a problem posting your settings"));
@@ -225,13 +252,10 @@ function status() {
     });
 }
 
-
-
-
 /**
 * Check on status of creating a transaction and halt i/o until done
 */
-function creationStatus(tx) {
+function creationStatus(tx, callback) {
   let status = 0;
 
   axios.get(daemonAddress + "/api/status/tx/" + tx)
@@ -252,7 +276,7 @@ function creationStatus(tx) {
     }
 
     if(status == 2) {
-      creationStatus(tx, false)
+      creationStatus(tx, callback)
     }
 
     let _status;
@@ -277,9 +301,7 @@ function creationStatus(tx) {
     }
 
     if (status == 1) {
-      // nodeFile.address == result
-      // writeToFile("nodeFile", nodeFile)
-      //CALL setNodeData
+      callback(null, _status)
     }
   })
   .catch(function(err) {
@@ -290,11 +312,10 @@ function creationStatus(tx) {
 /**
 * Set the data for the node based on onboarding info
 */
-function setNodeData() {
+function setNodeData(callback) {
   axios.post(daemonAddress + "/api/node/" + nodeFile.address + "/data/", nodeFile.userData)
   .then(function(res){
-    console.log();
-    console.log(colors.green("[Gladius-Node]") + " Node data successfully saved!");
+    callback(res.data.txHash)
   })
   .catch(function(err){
     console.log();
@@ -304,18 +325,19 @@ function setNodeData() {
 }
 
 /**
-* Get the data for the node based on onboarding info
+* Get the node address by reverse looking up the owner
 */
-function getNodeData() {
-  axios.get(daemonAddress + "/api/node/" + nodeFile.address)
+function getNodeAddress(callback) {
+  axios.get(daemonAddress + "/api/node")
   .then(function(res) {
-    console.log(res.data);
+    nodeFile.address = res.data.address
+    writeToFile("nodeFile", nodeFile)
+    callback()
   })
   .catch(function(err) {
-    console.log(err);
+    console.log(colors.red("[Gladius-Node] ") + "Couldn't get node address");
   })
 }
-
 
 /** WIP - need to add a stop/kill endpoint
 * Stop accepting connections
@@ -425,7 +447,7 @@ function listPools() {
 /*
 * For testing rando functions
 */
-function test() {
+function test(reeeee) {
   console.log(nodeFile.address);
 }
 
