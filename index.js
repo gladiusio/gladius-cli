@@ -19,6 +19,7 @@ var config = require("./config.js") // Load our config file
 var os = require("os");
 var {promisify} = require('util'); //<-- Require promisify
 var getIP = promisify(require('external-ip')()); // <-- And then wrap the library
+var rpc = require('node-json-rpc');
 
 let appDir = path.dirname(require.main.filename); // Get where this file is
 let daemonAddress = config.network.controlDaemonAddress + ":" + config.network.controlDaemonPort;
@@ -39,6 +40,20 @@ if(!fs.existsSync("./nodeFile.json")) {
 
 let nodeFile = require("./nodeFile.json")
 
+// RPC Stuff ==
+var rpcOptions = {
+  // int port of rpc server, default 5080 for http or 5433 for https
+  port: 5000,
+  // string domain name or ip of rpc server, default '127.0.0.1'
+  host: 'localhost',
+  // string with default path, default '/'
+  path: '/rpc',
+  // boolean false to turn rpc checks off, default true
+  strict: true
+};
+var rpcClient = new rpc.Client(rpcOptions);
+// RPC Stuff ==
+
 /**
 * Create options for the user where description is the description of the
 * argument and toCall is a function.
@@ -51,23 +66,35 @@ var options = {
   },
   "create": {
     description: "Create a node",
-    toCall: create
+    toCall: function(){postSettings(create)}
   },
   "apply": {
     description: "Apply to a pool",
-    toCall: apply // Eventually replace with arbitrary pool upon launch
+    toCall: function(){postSettings(apply)} // Eventually replace with arbitrary pool upon launch
   },
   "check": {
     description: "Status of your application to a pool",
-    toCall: checkPoolStatus
+    toCall: function(){postSettings(checkPoolStatus)}
   },
   "status": {
     description: "Get's the current status of the node daemons",
-    toCall: status
+    toCall: function(){postSettings(status)}
+  },
+  "start": {
+    description: "Start accepting connections and acting as an edge node",
+    toCall: function(){postSettings(startNetworking)}
+  },
+  "stop": {
+    description: "Stop accepting connections",
+    toCall: function(){postSettings(stopNetworking)}
+  },
+  "settings": {
+    description: "Show settings",
+    toCall: function(){postSettings(getSettings)}
   },
   "dirs": {
     description: "Returns the location of the config.js file",
-    toCall: locations
+    toCall: function(){postSettings(locations)}
   },
   "reset": {
     description: "Resets init file (for testing or problem installations)",
@@ -75,10 +102,6 @@ var options = {
       reset();
       console.log(colors.blue("nodeFile.json has been reset"));
     }
-  },
-  "settings": {
-    description: "Show settings",
-    toCall: getSettings
   },
   "test": {
     description: "Test random functions",
@@ -97,8 +120,6 @@ var options = {
 * just writes to the nodeFile.json
 */
 function init() {
-  checkKeys() //make sure the keys are there before doing this
-
   // Create a schema for the paremeters to be asked
   let schema = {
     properties: {
@@ -131,8 +152,9 @@ function init() {
     .then(function(ip) {
       nodeFile.userData.ip = ip;
       writeToFile("nodeFile", nodeFile); // Write it to a file
-      console.log(colors.green("[Gladius-Node]") + " User profile created! Please place your ETH and PGP private keys in the ./keys directory");
+      console.log(colors.green("[Gladius-Node]") + " User profile created! Please paste your ETH and PGP private keys in the " + colors.blue("./keys") + " directory");
       console.log(colors.green("[Gladius-Node]") + " Then you may create a node with " + colors.blue("gladius-node create"));
+      console.log(colors.green("[Gladius-Node]") + " If you'd like to change your information run " + colors.blue("gladius-node init") + " again");
     })
     .catch(function(error){
       console.error(error);
@@ -144,44 +166,42 @@ function init() {
 * Create a new Node smart contract (no data set)
 */
 function create() {
-  postSettings(function() {
-    axios.post(daemonAddress + "/api/node/create", {
-      //no data required, data is set AFTER you create the initial node contract
-    })
-    .then(function(res){
-      console.log(colors.blue("[Gladius-Node] ") + "Creating Node contract, please wait for tx to complete (this might take a couple of minutes) ");
+  axios.post(daemonAddress + "/api/node/create", {
+    //no data required, data is set AFTER you create the initial node contract
+  })
+  .then(function(res){
+    console.log(colors.blue("[Gladius-Node] ") + "Creating Node contract, please wait for tx to complete (this might take a couple of minutes) ");
 
-      creationStatus(res.data.txHash, function(err, res) {
-        if(res == colors.green("[Success]")) {
-          console.log();
-          console.log(colors.blue("[Gladius-Node] ") + "Setting Node data, please wait for tx to complete (this might take a couple of minutes) ");
+    creationStatus(res.data.txHash, function(err, res) {
+      if(res == colors.green("[Success]")) {
+        console.log();
+        console.log(colors.blue("[Gladius-Node] ") + "Setting Node data, please wait for tx to complete (this might take a couple of minutes) ");
 
-          getNodeAddress(function() {
-            setNodeData(function(tx) {
-              creationStatus(tx, function(err, res) {
-                if(res == colors.green("[Success]")) {
-                  console.log();
-                  console.log(colors.green("[Gladius-Node] " + "Node successfully created and ready to use"));
-                  console.log(colors.blue("[Gladius-Node] ") + "Use " + colors.blue("gladius-node apply") + " to apply to a pool");
-                }
-                else {
-                  console.log(colors.red("[Gladius-Node] ") + "There was a problem accessing your Node Contract");
-                }
-              })
+        getNodeAddress(function() {
+          setNodeData(function(tx) {
+            creationStatus(tx, function(err, res) {
+              if(res == colors.green("[Success]")) {
+                console.log();
+                console.log(colors.green("[Gladius-Node] " + "Node successfully created and ready to use"));
+                console.log(colors.blue("[Gladius-Node] ") + "Use " + colors.blue("gladius-node apply") + " to apply to a pool");
+              }
+              else {
+                console.log(colors.red("[Gladius-Node] ") + "There was a problem accessing your Node Contract");
+              }
             })
           })
+        })
 
-        }
-        else{
-          console.log(colors.red("[Gladius-Node] ") + "There was a problem creating your Node Contract");
-        }
+      }
+      else{
+        console.log(colors.red("[Gladius-Node] ") + "There was a problem creating your Node Contract");
+      }
 
-      })
     })
-    .catch(function(err){
-      console.log(err);
-      console.log(colors.red("There was a problem creating a node"));
-    })
+  })
+  .catch(function(err){
+    console.log(err);
+    console.log(colors.red("There was a problem creating a node"));
   })
 }
 
@@ -218,34 +238,36 @@ function apply() {
 * Start accepting connections, right now just posts the settings to start the server
 */
 function postSettings(callback) {
-  let schema = {
-    properties: {
-      passphrase: {
-        description: "Please enter the passphrase for your PGP private key:",
-        required: true,
-        hidden: true
+  checkKeys(function() {
+    let schema = {
+      properties: {
+        passphrase: {
+          description: "Please enter the passphrase for your PGP private key:",
+          required: true,
+          hidden: true
+        }
       }
-    }
-  };
+    };
 
-  // Prompt and store the data
-  prompt.get(schema, function(err, result) {
-    axios.post(daemonAddress + "/api/settings/start", {
-      "provider": settings.provider,
-      "privateKey": pvtKey.toString().replace(/\r?\n|\r/g,""),
-      "pgpKey": pgpKey.toString().replace(/\r?\n|\r/g,"\n"),
-      "marketAddress": settings.marketAddress,
-      "nodeFactoryAddress": settings.nodeFactoryAddress,
-      "passphrase": result.passphrase
-    })
-      .then(function() {
-        callback()
+    // Prompt and store the data
+    prompt.get(schema, function(err, result) {
+      axios.post(daemonAddress + "/api/settings/start", {
+        "provider": settings.provider,
+        "privateKey": pvtKey.toString().replace(/\r?\n|\r/g,""),
+        "pgpKey": pgpKey.toString().replace(/\r?\n|\r/g,"\n"),
+        "marketAddress": settings.marketAddress,
+        "nodeFactoryAddress": settings.nodeFactoryAddress,
+        "passphrase": result.passphrase
       })
-      .catch(function(err) {
-        console.log(err);
-        console.log(colors.red("There was a problem posting your settings"));
-      });
-  });
+        .then(function() {
+          callback()
+        })
+        .catch(function(err) {
+          console.log(err);
+          console.log(colors.red("There was a problem posting your settings"));
+        });
+    });
+  })
 }
 
 /**
@@ -385,10 +407,13 @@ function getKeys() {
 /**
 * Check if user keys are there, if not end proccess
 */
-function checkKeys() {
+function checkKeys(callback) {
   if (pvtKey.toString() == "INSERT PRIVATE KEY TO THROWAWAY WALLET HERE" || pgpKey.toString() == "INSERT PGP PRIVATE KEY HERE") {
     console.log(colors.red("[Gladius-Node] ") + "You have not pasted your keys in the ./keys folder, do this before proceeding");
     process.exit(1);
+  }
+  else {
+    callback()
   }
 }
 
@@ -412,22 +437,27 @@ function checkPoolStatus() {
 
       if(res != null) {
         let poolStatus;
+        let message;
 
         switch(res.data.status) {
           case "Rejected":
             poolStatus = colors.red("[Gladius-Node] ") + "Pool: " + result.poolAddress + "\t" + colors.red("[Application Status: Rejected]");
+            message = colors.red("[Gladius-Node] ") + "Consider applying to a different pool"
             break;
           case "Pending":
             poolStatus = colors.yellow("[Gladius-Node] ") + "Pool: " + result.poolAddress + "\t" + colors.yellow("[Application Status: Pending]")
+            message = colors.yellow("[Gladius-Node] ") + "Wait until the pool manager accepts your application in order to become an edge node"
             break;
           case "Approved":
             poolStatus = colors.green("[Gladius-Node] ") + "Pool: " + result.poolAddress + "\t" + colors.green("[Application Status: Green]")
+            message = colors.green("[Gladius-Node] ") + "You've been accepted! Use " + colors.blue("gladius-node start") + " to start accepting connections!"
             break;
         }
         console.log(poolStatus);
+        console.log(message);
       }
       else {
-        console.log();
+        console.log(colors.red("[Gladius-Node] ") + "You've entered the wrong pool address");
       }
 
     })
@@ -459,6 +489,36 @@ function listPools() {
 function test() {
 
 }
+
+/*
+* start the RPC server
+*/
+function startNetworking() {
+
+  rpcClient.call( {"jsonrpc": "2.0", "method": "start", "id": 1}, function (err, res) {
+    if(err) {
+      console.log(err);
+    }
+    else {
+      console.log(res);
+    }
+  })
+}
+
+/*
+* stop the RPC server
+*/
+function stopNetworking() {
+  rpcClient.call( {"jsonrpc": "2.0", "method": "stop", "id": 1}, function (err, res) {
+    if(err) {
+      console.log(err);
+    }
+    else {
+      console.log(res);
+    }
+  })
+}
+
 
 /**
 * Builds and prints help menu
