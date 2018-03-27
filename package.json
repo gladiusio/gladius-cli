@@ -18,7 +18,7 @@
     "gladius-cli",
     "gladius-node"
   ],
-  "author": "Alex Godwin",
+  "author": "Gladius",
   "license": "GPL-3.0",
   "bugs": {
     "url": "https://github.com/gladiusio/gladius-cli/issues"
@@ -27,6 +27,8 @@
   "dependencies": {
     "axios": "^0.16.2",
     "cli-spinner": "^0.2.8",
+    "external-ip": "^2.0.3",
+    "ip": "^1.1.5",
     "prompt": "^1.0.0"
   }
 }
