@@ -5,27 +5,22 @@ Command line interface to control the node daemon.
 **This is a work in progress, not all of the below methods will work**
 
 ## Installation
-First install nodejs and npm from [here](https://nodejs.org/en/).
-
-Navigate to the project and run the following command to install the Gladius
-CLI.
-
-`npm install -g .`
-
-Finally, install the daemon using either
-[docker](https://github.com/gladiusio/gladius-node-app) or
-[directly](https://gladius.io)
+- First install nodejs and npm from [here](https://nodejs.org/en/)
+- Clone the latest version of `gladius-cli`
 
 ## Setup
 
-Set up a local static IP for the machine you will be running the Gladius node on
-, and forward port 443 and 80 on your router to this machine.
+- Set up a local static IP for the machine you will be running the Gladius node on
+- Forward port 443 and 80 on your router to that machine
 
 _TODO: Talk about configuring a hostname for SSL in future_
 
-Run `gladius-node init` to initialize your Gladius node. Fill out the requested
-information and make sure you use the same private key as you used when you
-registered for the beta. This will ensure that you can sign up without a hitch.
+- Create a [new PGP key](https://pgpkeygen.com/) aswell as a [new Ethereum wallet](https://medium.com/benebit/how-to-create-a-wallet-on-myetherwallet-and-metamask-e84da095d888)
+- Paste your **new** private keys in the `pgpKey.txt` and `pvtKey.txt` files located at `/gladius-cli/keys`
+- Acquire 1 Ether on the [Ropsten testnet](http://faucet.ropsten.be:3001/) (or go [here](https://blog.bankex.org/how-to-buy-ethereum-using-metamask-ccea0703daec) if you're using Metamask)
+-
+- Run `gladius-node init` and fill out the requested
+information (use the same email that you applied for the beta with)
 
 Once you have filled out your information (and there are no errors) you can run
 the command `gladius-node join-pool` to inform the Gladius daemon that this
