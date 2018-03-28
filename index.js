@@ -20,13 +20,13 @@ var os = require("os");
 var {promisify} = require('util'); //<-- Require promisify
 var getIP = promisify(require('external-ip')()); // <-- And then wrap the library
 var rpc = require('node-json-rpc');
+var kbpgp = require('kbpgp');
+let settings = require("./settings.json")
 
 let appDir = path.dirname(require.main.filename); // Get where this file is
 let daemonAddress = config.network.controlDaemonAddress + ":" + config.network.controlDaemonPort;
-let pgpKey = fs.readFileSync("./keys/pgpKey.txt","utf8") //pgp key
-let pvtKey = fs.readFileSync("./keys/pvtKey.txt","utf8") //ETH wallet private key
-let settings = require("./settings.json")
-let passphrase;
+let pgpKey //pgp key
+let pvtKey //ETH wallet private key
 
 // Set up prompt
 prompt.message = colors.blue("[Gladius-Node]");
@@ -58,11 +58,10 @@ var rpcClient = new rpc.Client(rpcOptions);
 * Create options for the user where description is the description of the
 * argument and toCall is a function.
 */
-
 var options = {
   "init": {
     description: "Gathers information about the user as well as configuration data.",
-    toCall: init
+    toCall: function(){reset(init)}
   },
   "create": {
     description: "Create a node",
@@ -87,6 +86,10 @@ var options = {
   "stop": {
     description: "Stop accepting connections",
     toCall: function(){postSettings(stopNetworking)}
+  },
+  "gen-keys": {
+    description: "Generate new PGP keys",
+    toCall: function() {genPGPKey(function(){console.log(colors.green("[Gladius-Node] ") + "New PGP keys generated");})}
   },
   "settings": {
     description: "Show settings",
@@ -136,6 +139,13 @@ function init() {
       bio: {
         description: "Short bio about why you're interested in Gladius:",
         required: true
+      },
+      pvtKey: {
+        description: "Please make a new ETH wallet and paste your private key (include 0x at the beginning): ",
+        required: true,
+        hidden: true,
+        pattern: /0[xX][0-9a-zA-Z]+/,
+        message: "Please include \'0x\' at the beginning of your private key"
       }
     }
   };
@@ -148,17 +158,22 @@ function init() {
       bio: result.bio,
       initialized: true // Set our initialized flag
     };
-    getIP()
-    .then(function(ip) {
-      nodeFile.userData.ip = ip;
-      writeToFile("nodeFile", nodeFile); // Write it to a file
-      console.log(colors.green("[Gladius-Node]") + " User profile created! Please paste your ETH and PGP private keys in the " + colors.blue("./keys") + " directory");
-      console.log(colors.green("[Gladius-Node]") + " Then you may create a node with " + colors.blue("gladius-node create"));
-      console.log(colors.green("[Gladius-Node]") + " If you'd like to change your information run " + colors.blue("gladius-node init") + " again");
+
+    fs.writeFileSync("./keys/ethPvtKey.txt", result.pvtKey)
+
+    genPGPKey(function() {
+      getIP()
+      .then(function(ip) {
+        nodeFile.userData.ip = ip;
+        writeToFile("nodeFile", nodeFile); // Write it to a file
+        // console.log(colors.green("[Gladius-Node]") + " User profile created! Please paste your ETH and PGP private keys in the " + colors.blue("./keys") + " directory");
+        console.log(colors.green("[Gladius-Node]") + " User profile created! You may create a node with " + colors.blue("gladius-node create"));
+        console.log(colors.green("[Gladius-Node]") + " If you'd like to change your information run " + colors.blue("gladius-node init") + " again");
+      })
+      .catch(function(error){
+        console.error(error);
+      });
     })
-    .catch(function(error){
-      console.error(error);
-    });
   });
 }
 
@@ -249,6 +264,11 @@ function postSettings(callback) {
       }
     };
 
+    pvtKey = fs.readFileSync("./keys/ethPvtKey.txt","utf8")
+    pgpKey = fs.readFileSync("./keys/pgpPvtKey.txt","utf8")
+    // console.log(pvtKey);
+    // console.log(pgpKey);
+
     // Prompt and store the data
     prompt.get(schema, function(err, result) {
       axios.post(daemonAddress + "/api/settings/start", {
@@ -263,7 +283,7 @@ function postSettings(callback) {
           callback()
         })
         .catch(function(err) {
-          console.log(err);
+          // console.log(err);
           console.log(colors.red("There was a problem posting your settings"));
         });
     });
@@ -408,8 +428,8 @@ function getKeys() {
 * Check if user keys are there, if not end proccess
 */
 function checkKeys(callback) {
-  if (pvtKey.toString() == "INSERT PRIVATE KEY TO THROWAWAY WALLET HERE" || pgpKey.toString() == "INSERT PGP PRIVATE KEY HERE") {
-    console.log(colors.red("[Gladius-Node] ") + "You have not pasted your keys in the ./keys folder, do this before proceeding");
+  if (!fs.existsSync("./keys/ethPvtKey.txt") || !fs.existsSync("./keys/pgpPubKey.txt") || !fs.existsSync("./keys/pgpPvtKey.txt")) {
+    console.log(colors.red("[Gladius-Node] ") + "You do not have any key files. Run " + colors.blue("gladius-node init") + " to set up your information");
     process.exit(1);
   }
   else {
@@ -439,19 +459,23 @@ function checkPoolStatus() {
         let poolStatus;
         let message;
 
-        switch(res.data.status) {
-          case "Rejected":
-            poolStatus = colors.red("[Gladius-Node] ") + "Pool: " + result.poolAddress + "\t" + colors.red("[Application Status: Rejected]");
-            message = colors.red("[Gladius-Node] ") + "Consider applying to a different pool"
-            break;
-          case "Pending":
-            poolStatus = colors.yellow("[Gladius-Node] ") + "Pool: " + result.poolAddress + "\t" + colors.yellow("[Application Status: Pending]")
-            message = colors.yellow("[Gladius-Node] ") + "Wait until the pool manager accepts your application in order to become an edge node"
-            break;
-          case "Approved":
+        switch(res.data.code) {
+          case 1:
             poolStatus = colors.green("[Gladius-Node] ") + "Pool: " + result.poolAddress + "\t" + colors.green("[Application Status: Green]")
             message = colors.green("[Gladius-Node] ") + "You've been accepted! Use " + colors.blue("gladius-node start") + " to start accepting connections!"
             break;
+          case 2:
+            poolStatus = colors.red("[Gladius-Node] ") + "Pool: " + result.poolAddress + "\t" + colors.red("[Application Status: Rejected]");
+            message = colors.red("[Gladius-Node] ") + "Consider applying to a different pool"
+            break;
+          case 3:
+            poolStatus = colors.yellow("[Gladius-Node] ") + "Pool: " + result.poolAddress + "\t" + colors.yellow("[Application Status: Pending]")
+            message = colors.yellow("[Gladius-Node] ") + "Wait until the pool manager accepts your application in order to become an edge node"
+            break;
+          default:
+          poolStatus = colors.magenta("[Gladius-Node] ") + "Pool: " + result.poolAddress + "\t" + colors.red("[Application Status: Not Sent]");
+          message = colors.magenta("[Gladius-Node] ") + "You have not sent an application to this pool. Use " + colors.blue("gladius-node apply") + " to apply"
+          break;
         }
         console.log(poolStatus);
         console.log(message);
@@ -484,10 +508,112 @@ function listPools() {
 }
 
 /*
+* Generate pgp key pairs
+*/
+function genPGPKey(callback) {
+  let schema = {
+    properties: {
+      passphrase: {
+        description: "Please enter a passphrase for your new PGP keys: ",
+        required: true,
+        hidden: true
+      }
+    }
+  };
+
+  // Prompt and store the data
+  prompt.get(schema, function(err, result) {
+    var F = kbpgp["const"].openpgp;
+
+    var opts = {
+      userid: "User McTester (Born 1979) <user@example.com>",
+      primary: {
+        nbits: 1024,
+        flags: F.certify_keys | F.sign_data | F.auth | F.encrypt_comm,
+        expire_in: 0  // never expire
+      },
+      subkeys: []
+    };
+
+    kbpgp.KeyManager.generate(opts, function(err, alice) {
+      if (!err) {
+        // sign alice's subkeys
+        alice.sign({}, function(err) {
+          // console.log(alice);
+          // export demo; dump the private with a passphrase
+          alice.export_pgp_private ({
+            passphrase: result.passphrase
+          }, function(err, pgp_private) {
+            fs.writeFileSync("./keys/pgpPvtKey.txt", pgp_private)
+            callback()
+          });
+          alice.export_pgp_public({}, function(err, pgp_public) {
+            fs.writeFileSync("./keys/pgpPubKey.txt", pgp_public)
+          });
+        });
+      }
+    });
+  });
+}
+
+
+/*
 * For testing rando functions
 */
 function test() {
+  let schema = {
+    properties: {
+      passphrase: {
+        description: "Please enter the passphrase for your PGP private key:",
+        required: true,
+        hidden: true
+      }
+    }
+  };
 
+  // Prompt and store the data
+  prompt.get(schema, function(err, result) {
+    var F = kbpgp["const"].openpgp;
+
+    var opts = {
+      userid: "User McTester (Born 1979) <user@example.com>",
+      primary: {
+        nbits: 1024,
+        flags: F.certify_keys | F.sign_data | F.auth | F.encrypt_comm | F.encrypt_storage,
+        expire_in: 0  // never expire
+      },
+      subkeys: [
+        {
+          nbits: 1024,
+          flags: F.sign_data,
+          expire_in: 86400 * 365 * 8 // 8 years
+        }, {
+          nbits: 1024,
+          flags: F.encrypt_comm | F.encrypt_storage,
+          expire_in: 86400 * 365 * 8
+        }
+      ]
+    };
+
+    kbpgp.KeyManager.generate(opts, function(err, alice) {
+      if (!err) {
+        // sign alice's subkeys
+        alice.sign({}, function(err) {
+          // console.log(alice);
+          // export demo; dump the private with a passphrase
+          alice.export_pgp_private ({
+            passphrase: result.passphrase
+          }, function(err, pgp_private) {
+            fs.writeFileSync("./keys/pgpPvtKey.txt", pgp_private)
+            console.log("Done");
+          });
+          alice.export_pgp_public({}, function(err, pgp_public) {
+            fs.writeFileSync("./keys/pgpPubKey.txt", pgp_public)
+          });
+        });
+      }
+    });
+  });
 }
 
 /*
@@ -544,7 +670,7 @@ function writeToFile(name, data) {
 /*
 * Reset the nodeFile
 */
-function reset() {
+function reset(callback) {
   let data = {
     "userData":
       {
@@ -557,6 +683,7 @@ function reset() {
     "address":""
   }
   fs.writeFileSync("./nodeFile.json", JSON.stringify(data, null, 2))
+  callback()
 }
 
 // Get the argument that the user provided

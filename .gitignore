@@ -57,6 +57,3 @@ typings/
 # dotenv environment variables file
 .env
 nodeFile.json
-settings.json
-pgpKey.txt
-pvtKey.txt

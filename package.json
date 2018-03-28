@@ -27,6 +27,7 @@
   "dependencies": {
     "axios": "^0.16.2",
     "external-ip": "^2.0.3",
+    "kbpgp": "^2.0.77",
     "node-json-rpc": "0.0.1",
     "prompt": "^1.0.0"
   }
