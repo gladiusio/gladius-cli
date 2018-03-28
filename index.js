@@ -264,8 +264,8 @@ function postSettings(callback) {
       }
     };
 
-    pvtKey = fs.readFileSync("./keys/ethPvtKey.txt","utf8")
-    pgpKey = fs.readFileSync("./keys/pgpPvtKey.txt","utf8")
+    pvtKey = fs.readFileSync(appDir + "./keys/ethPvtKey.txt","utf8")
+    pgpKey = fs.readFileSync(appDir + "./keys/pgpPvtKey.txt","utf8")
     // console.log(pvtKey);
     // console.log(pgpKey);
 
