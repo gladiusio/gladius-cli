@@ -34,7 +34,7 @@ prompt.delimiter = " ";
 
 prompt.start();
 
-if(!fs.existsSync("./nodeFile.json")) {
+if(!fs.existsSync(appDir + "/nodeFile.json")) {
   reset();
 }
 
@@ -159,7 +159,7 @@ function init() {
       initialized: true // Set our initialized flag
     };
 
-    fs.writeFileSync("./keys/ethPvtKey.txt", result.pvtKey)
+    fs.writeFileSync(appDir+"/keys/ethPvtKey.txt", result.pvtKey)
 
     genPGPKey(function() {
       getIP()
@@ -304,6 +304,8 @@ function status(callback) {
       }
     })
     .catch(function(err) {
+      console.log(err);
+      console.log(daemonAddress);
       console.log(colors.red("[Gladius-Node]") + " gladius-control-daemon server is down! Run " + colors.blue("node index.js") + " in the gladius-control-daemon directory");
     });
 }
@@ -428,7 +430,7 @@ function getKeys() {
 * Check if user keys are there, if not end proccess
 */
 function checkKeys(callback) {
-  if (!fs.existsSync("./keys/ethPvtKey.txt") || !fs.existsSync("./keys/pgpPubKey.txt") || !fs.existsSync("./keys/pgpPvtKey.txt")) {
+  if (!fs.existsSync(appDir+"/keys/ethPvtKey.txt") || !fs.existsSync(appDir+"/keys/pgpPubKey.txt") || !fs.existsSync(appDir+"/keys/pgpPvtKey.txt")) {
     console.log(colors.red("[Gladius-Node] ") + "You do not have any key files. Run " + colors.blue("gladius-node init") + " to set up your information");
     process.exit(1);
   }
@@ -544,11 +546,11 @@ function genPGPKey(callback) {
           alice.export_pgp_private ({
             passphrase: result.passphrase
           }, function(err, pgp_private) {
-            fs.writeFileSync("./keys/pgpPvtKey.txt", pgp_private)
+            fs.writeFileSync(appDir+"/keys/pgpPvtKey.txt", pgp_private)
             callback()
           });
           alice.export_pgp_public({}, function(err, pgp_public) {
-            fs.writeFileSync("./keys/pgpPubKey.txt", pgp_public)
+            fs.writeFileSync(appDir+"/keys/pgpPubKey.txt", pgp_public)
           });
         });
       }
@@ -604,11 +606,11 @@ function test() {
           alice.export_pgp_private ({
             passphrase: result.passphrase
           }, function(err, pgp_private) {
-            fs.writeFileSync("./keys/pgpPvtKey.txt", pgp_private)
+            fs.writeFileSync(appDir+"/keys/pgpPvtKey.txt", pgp_private)
             console.log("Done");
           });
           alice.export_pgp_public({}, function(err, pgp_public) {
-            fs.writeFileSync("./keys/pgpPubKey.txt", pgp_public)
+            fs.writeFileSync(appDir+"/keys/pgpPubKey.txt", pgp_public)
           });
         });
       }
@@ -664,7 +666,7 @@ function help(options) {
 * Helper function for writing to files
 */
 function writeToFile(name, data) {
-  fs.writeFileSync("./"+name+".json", JSON.stringify(data, null, 2))
+  fs.writeFileSync(appDir+"/"+name+".json", JSON.stringify(data, null, 2))
 }
 
 /*
@@ -682,7 +684,7 @@ function reset(callback) {
       },
     "address":""
   }
-  fs.writeFileSync("./nodeFile.json", JSON.stringify(data, null, 2))
+  fs.writeFileSync(appDir+"/nodeFile.json", JSON.stringify(data, null, 2))
   if (callback != null) {
     callback()
   }
