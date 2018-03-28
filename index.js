@@ -683,7 +683,9 @@ function reset(callback) {
     "address":""
   }
   fs.writeFileSync("./nodeFile.json", JSON.stringify(data, null, 2))
-  callback()
+  if (callback != null) {
+    callback()
+  }
 }
 
 // Get the argument that the user provided
