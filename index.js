@@ -254,16 +254,19 @@ function apply() {
 */
 function postSettings(req, callback) {
   checkKeys(function() {
-    let props = {}
     let schema = {
-      properties: props
+      properties: {}
     };
 
     if(req == true) {
-      props = {
-        description: "Please enter the passphrase for your PGP private key:",
-        required: true,
-        hidden: true
+      schema = {
+        properties: {
+          passphrase: {
+            description: "Please enter the passphrase for your PGP private key:",
+            required: true,
+            hidden: true
+          }
+        }
       }
     }
 
