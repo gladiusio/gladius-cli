@@ -1,6 +1,6 @@
 {
   "name": "gladius-cli",
-  "version": "0.1.9-beta",
+  "version": "0.1.10-beta",
   "description": "The Gladius node command line interface, an entry point for the Gladius system",
   "main": "index.js",
   "scripts": {
