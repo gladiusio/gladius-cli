@@ -304,6 +304,7 @@ function status(callback) {
       }
     })
     .catch(function(err) {
+      console.log(err);
       console.log(colors.red("[Gladius-Node]") + " gladius-control-daemon server is down at "+ daemonAddress +" Run " + colors.blue("node index.js") + " in the gladius-control-daemon directory");
     });
 }
