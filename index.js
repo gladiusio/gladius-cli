@@ -65,39 +65,39 @@ var options = {
   },
   "create": {
     description: "Create a node",
-    toCall: function(){postSettings(create)}
+    toCall: function(){postSettings(true, create)}
   },
   "apply": {
     description: "Apply to a pool",
-    toCall: function(){postSettings(apply)} // Eventually replace with arbitrary pool upon launch
+    toCall: function(){postSettings(true, apply)}
   },
   "check": {
     description: "Status of your application to a pool",
-    toCall: function(){postSettings(checkPoolStatus)}
+    toCall: function(){postSettings(false, checkPoolStatus)}
   },
   "status": {
     description: "Get's the current status of the node daemons",
-    toCall: function(){postSettings(status)}
+    toCall: function(){postSettings(false, status)}
   },
-  "start": {
+  "start": { //
     description: "Start accepting connections and acting as an edge node",
-    toCall: function(){postSettings(startNetworking)}
+    toCall: startNetworking
   },
-  "stop": {
+  "stop": { //
     description: "Stop accepting connections",
-    toCall: function(){postSettings(stopNetworking)}
+    toCall: stopNetworking
   },
   "gen-keys": {
     description: "Generate new PGP keys",
     toCall: function() {genPGPKey(function(){console.log(colors.green("[Gladius-Node] ") + "New PGP keys generated");})}
   },
-  "settings": {
+  "settings": { //
     description: "Show settings",
-    toCall: function(){postSettings(getSettings)}
+    toCall: function(){postSettings(false, getSettings)}
   },
   "dirs": {
     description: "Returns the location of the config.js file",
-    toCall: function(){postSettings(locations)}
+    toCall: (locations)
   },
   "reset": {
     description: "Resets init file (for testing or problem installations)",
@@ -244,7 +244,7 @@ function apply() {
       })
     })
     .catch(function(err) {
-      console.log(err.data);
+      console.log(err);
     })
   });
 }
@@ -252,17 +252,20 @@ function apply() {
 /**
 * Start accepting connections, right now just posts the settings to start the server
 */
-function postSettings(callback) {
+function postSettings(req, callback) {
   checkKeys(function() {
+    let props = {}
     let schema = {
-      properties: {
-        passphrase: {
-          description: "Please enter the passphrase for your PGP private key:",
-          required: true,
-          hidden: true
-        }
-      }
+      properties: props
     };
+
+    if(req == true) {
+      props = {
+        description: "Please enter the passphrase for your PGP private key:",
+        required: true,
+        hidden: true
+      }
+    }
 
     pvtKey = fs.readFileSync(appDir + "/keys/ethPvtKey.txt","utf8")
     pgpKey = fs.readFileSync(appDir + "/keys/pgpPvtKey.txt","utf8")
@@ -283,7 +286,7 @@ function postSettings(callback) {
           callback()
         })
         .catch(function(err) {
-          // console.log(err);
+          console.log(err);
           console.log(colors.red("There was a problem posting your settings"));
         });
     });
@@ -297,7 +300,8 @@ function status(callback) {
   axios.get(daemonAddress + "/api/status/")
     .then(function(res) {
       if(callback == null) {
-        console.log(colors.green("[Gladius-Node]") + " gladius-control-daemon server is running!");
+        console.log(colors.green("[Gladius-Node]") + " Gladius Control Daemon server is running!");
+        statusNetworking()
       }
       else {
         callback()
@@ -375,9 +379,8 @@ function setNodeData(callback) {
     callback(res.data.txHash)
   })
   .catch(function(err){
-    console.log();
-    console.log(colors.red("[Gladius-Node]") + " Error setting Node data");
     console.log(err);
+    console.log(colors.red("[Gladius-Node]") + " Error setting Node data");
   })
 }
 
@@ -392,6 +395,7 @@ function getNodeAddress(callback) {
     callback()
   })
   .catch(function(err) {
+    console.log(err);
     console.log(colors.red("[Gladius-Node] ") + "Couldn't get node address");
   })
 }
@@ -557,77 +561,44 @@ function genPGPKey(callback) {
   });
 }
 
-
 /*
 * For testing rando functions
 */
 function test() {
-  let schema = {
-    properties: {
-      passphrase: {
-        description: "Please enter the passphrase for your PGP private key:",
-        required: true,
-        hidden: true
-      }
-    }
-  };
-
-  // Prompt and store the data
-  prompt.get(schema, function(err, result) {
-    var F = kbpgp["const"].openpgp;
-
-    var opts = {
-      userid: "User McTester (Born 1979) <user@example.com>",
-      primary: {
-        nbits: 1024,
-        flags: F.certify_keys | F.sign_data | F.auth | F.encrypt_comm | F.encrypt_storage,
-        expire_in: 0  // never expire
-      },
-      subkeys: [
-        {
-          nbits: 1024,
-          flags: F.sign_data,
-          expire_in: 86400 * 365 * 8 // 8 years
-        }, {
-          nbits: 1024,
-          flags: F.encrypt_comm | F.encrypt_storage,
-          expire_in: 86400 * 365 * 8
-        }
-      ]
-    };
-
-    kbpgp.KeyManager.generate(opts, function(err, alice) {
-      if (!err) {
-        // sign alice's subkeys
-        alice.sign({}, function(err) {
-          // console.log(alice);
-          // export demo; dump the private with a passphrase
-          alice.export_pgp_private ({
-            passphrase: result.passphrase
-          }, function(err, pgp_private) {
-            fs.writeFileSync(appDir+"/keys/pgpPvtKey.txt", pgp_private)
-            console.log("Done");
-          });
-          alice.export_pgp_public({}, function(err, pgp_public) {
-            fs.writeFileSync(appDir+"/keys/pgpPubKey.txt", pgp_public)
-          });
-        });
-      }
-    });
-  });
+  console.log("test function");
 }
 
 /*
 * start the RPC server
 */
 function startNetworking() {
-
   rpcClient.call( {"jsonrpc": "2.0", "method": "start", "id": 1}, function (err, res) {
     if(err) {
       console.log(err);
+      console.log(colors.red("[Gladius-Node] ") + "gladius edge daemon not running");
     }
     else {
-      console.log(res);
+      console.log(colors.green("[Gladius-Node] ") + "gladius edge daemon running, you are now an edge node!");
+      console.log(colors.blue("[Gladius-Node] ") + "If you'd like to stop, run " + colors.blue("gladius-node stop"));
+    }
+  })
+}
+
+function statusNetworking() {
+  rpcClient.call( {"jsonrpc": "2.0", "method": "status", "id": 1}, function (err, res) {
+    if(err) {
+      console.log(err);
+      console.log(colors.red("[Gladius-Node] ") + "gladius edge daemon not running");
+    }
+    else {
+      if(res.result.running) {
+        console.log(colors.green("[Gladius-Node] ") + "Gladius Edge Daemon running, you are an edge node!");
+        console.log(colors.blue("[Gladius-Node] ") + "If you'd like to stop, run " + colors.blue("gladius-node stop"));
+      }
+      else {
+        console.log(colors.red("[Gladius-Node] ") + "gladius edge daemon is not running");
+        console.log(colors.blue("[Gladius-Node] ") + "If you'd like to start, run " + colors.blue("gladius-node start"));
+      }
     }
   })
 }
@@ -639,9 +610,11 @@ function stopNetworking() {
   rpcClient.call( {"jsonrpc": "2.0", "method": "stop", "id": 1}, function (err, res) {
     if(err) {
       console.log(err);
+      console.log(colors.red("[Gladius-Node] ") + "gladius edge daemon error");
     }
     else {
-      console.log(res);
+      console.log(colors.red("[Gladius-Node] ") + "gladius edge daemon is not running");
+      console.log(colors.blue("[Gladius-Node] ") + "If you'd like to start, run " + colors.blue("gladius-node start"));
     }
   })
 }
