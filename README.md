@@ -4,7 +4,9 @@ Command line interface to control the node daemon.
 
 ## Installation
 
-### Install Node.js
+### Dependencies
+
+#### Node.js
 
 Node.js provides a general installation guide [here](https://nodejs.org/en/download/package-manager/) but we will walk through the installation for Windows, Ubuntu, and macOS.
 
@@ -23,9 +25,18 @@ Here are some shortcuts to commands
     * `/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`
     * `brew install node`
 
-### Change Global Installation Directory
+#### Git
 
-This is only necessary for Ubuntu / Linux installs. Our packages requires some dependencies that require superuser access if installed in the default Ubuntu paths. We recommend changing the default installation of global node modules to `~/.npm-global` as stated in the [npm.js docs](https://docs.npmjs.com/getting-started/fixing-npm-permissions#option-two-change-npms-default-directory). We included the commands below:
+* Windows
+  * https://gitforwindows.org
+* Ubuntu
+  * `apt-get install git`
+* macOS
+  * Comes default with mac but can also be installed via [Homebrew](https://brew.sh/) (`brew install git`)
+
+#### Change Global Installation Directory
+
+**This is only necessary for Ubuntu / Linux installs.** Our packages requires some dependencies that require superuser access if installed in the default Ubuntu paths. We recommend changing the default installation of global node modules to `~/.npm-global` as stated in the [npm.js docs](https://docs.npmjs.com/getting-started/fixing-npm-permissions#option-two-change-npms-default-directory). We included the commands below:
 
 * Run `mkdir ~/.npm-global`
 * Run `npm config set prefix '~/.npm-global'`
@@ -34,29 +45,33 @@ This is only necessary for Ubuntu / Linux installs. Our packages requires some d
 
 Another option is to use [NVM](https://docs.npmjs.com/getting-started/fixing-npm-permissions#option-one-reinstall-with-a-node-version-manager) to handle permissions.
 
+
+## Setup
+
 ### Gladius Control Daemon
 
 * Run `npm install -g gladius-control-daemon`
-* Run `gladius-control-daemon` to start the server
+* Run `gladius-control` to start the server
   * Expected Output:
     ```
-    $ gladius-control-daemon                                                                        
+    $ gladius-control                                                                       
     Running at http://localhost:3000
     ```
   * Leave this running in a new window for the CLI to communicate
 
-### Gladius Edge Daemon [WIP]
+### Gladius Edge Daemon
 
-  * Run `npm install -g gladius-control-daemon`
-  * Run `gladius-control-daemon` to start the server
+  * Run `npm install -g gladius-edge-daemon`
+  * Run `gladius-edge` to start the server
     * Expected Output:
       ```
-      $ gladius-control-daemon                                                                        
-      Running at http://localhost:3000
+      $ gladius-edge                                                                       
+      Running - Use "gladius-node start" to start it
       ```
     * Leave this running in a new window for the CLI to communicate
 
-## Setup
+### Gladius CLI
+
 - Set up a local static IP for the machine you will be running the Gladius node on
 - Forward port 8080 on your router to that machine
 - Create a [new Ethereum wallet](https://medium.com/benebit/how-to-create-a-wallet-on-myetherwallet-and-metamask-e84da095d888)
