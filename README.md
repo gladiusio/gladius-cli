@@ -2,65 +2,208 @@
 
 Command line interface to control the node daemon.
 
-**This is a work in progress, not all of the below methods will work**
-
 ## Installation
-First install nodejs and npm from [here](https://nodejs.org/en/).
 
-Navigate to the project and run the following command to install the Gladius
-CLI.
+### Dependencies
 
-`npm install -g .`
+#### Node.js
 
-Finally, install the daemon using either
-[docker](https://github.com/gladiusio/gladius-node-app) or
-[directly](https://gladius.io)
+Node.js provides a general installation guide [here](https://nodejs.org/en/download/package-manager/) but we will walk through the installation for Windows, Ubuntu, and macOS.
+
+We based this application off of the latest branch (9.9.0) at the time of this writing.
+
+Here are some shortcuts to commands
+
+* Windows
+  * Download Installer, [here](https://nodejs.org/en/#download)
+  * Select the latest, 9.9.0+
+* Ubuntu
+  * `curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -`
+  * `sudo apt-get install -y nodejs`
+* macOS
+  * Install Homebrew, [instructions](https://brew.sh/)
+    * `/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`
+    * `brew install node`
+
+#### Git
+
+* Windows
+  * https://gitforwindows.org
+* Ubuntu
+  * `apt-get install git`
+* macOS
+  * Comes default with mac but can also be installed via [Homebrew](https://brew.sh/) (`brew install git`)
+
+#### Change Global Installation Directory
+
+**This is only necessary for Ubuntu / Linux installs.** Our packages requires some dependencies that require superuser access if installed in the default Ubuntu paths. We recommend changing the default installation of global node modules to `~/.npm-global` as stated in the [npm.js docs](https://docs.npmjs.com/getting-started/fixing-npm-permissions#option-two-change-npms-default-directory). We included the commands below:
+
+* Run `mkdir ~/.npm-global`
+* Run `npm config set prefix '~/.npm-global'`
+* Add `export PATH=~/.npm-global/bin:$PATH` to your `.profile` of `.zshrc` file
+* Run `source ~/.profile`
+
+Another option is to use [NVM](https://docs.npmjs.com/getting-started/fixing-npm-permissions#option-one-reinstall-with-a-node-version-manager) to handle permissions.
+
 
 ## Setup
 
-Set up a local static IP for the machine you will be running the Gladius node on
-, and forward port 443 and 80 on your router to this machine.
+### Gladius Control Daemon
 
-_TODO: Talk about configuring a hostname for SSL in future_
+* Run `npm install -g gladius-control-daemon`
+* Run `gladius-control` to start the server
+  * Expected Output:
+    ```
+    $ gladius-control                                                                       
+    Running at http://localhost:3000
+    ```
+  * Leave this running in a new window for the CLI to communicate
 
-Run `gladius-node init` to initialize your Gladius node. Fill out the requested
-information and make sure you use the same private key as you used when you
-registered for the beta. This will ensure that you can sign up without a hitch.
+### Gladius Edge Daemon
 
-Once you have filled out your information (and there are no errors) you can run
-the command `gladius-node join-pool` to inform the Gladius daemon that this
-information is correct and you would like to join the beta pool. Your data will
-then be encrypted using the pool's public key, and put on the Ethereum
-blockchain. This may take some time to complete, so check your status with the
-command `gladius-node check-join` this can return a few different states
-(pending, denied, or accepted).
+  * Run `npm install -g gladius-edge-daemon`
+  * Run `gladius-edge` to start the server
+    * Expected Output:
+      ```
+      $ gladius-edge                                                                       
+      Running - Use "gladius-node start" to start it
+      ```
+    * Leave this running in a new window for the CLI to communicate
 
-Once you have been accepted to the pool, you can run
-the command `gladius-node start` to inform the Gladius daemon (it must be
-running and installed) that you would like to start accepting requests for
-content.
+### Gladius CLI
 
-To inform the daemon that you would like to stop accepting requests, run
-`gladius-node stop`. This will leave the daemon running, but will stop
-networking and transactions from taking place.
+- Set up a local static IP for the machine you will be running the Gladius node on
+- Forward port 8080 on your router to that machine
+- Create a [new Ethereum wallet](https://medium.com/benebit/how-to-create-a-wallet-on-myetherwallet-and-metamask-e84da095d888)
+- Acquire 1 Ether on the [Ropsten testnet](http://faucet.ropsten.be:3001/) (or go [here](https://blog.bankex.org/how-to-buy-ethereum-using-metamask-ccea0703daec) if you're using Metamask)
+- Run `gladius-node init` and fill out the requested
+information (use the same email that you applied for the beta with)
 
-## Configuration
-To configure features of the Gladius node software that would normally not be
-used by the average user, run `gladius-node config-location` to get the location
-of the "config.js" file that dictates parameters like ports and the IP address
-of the daemon.   
+## Commands
+`gladius-node <option>`
+
+#### **init**
+Only needs to be run once after installation. Saves user information **locally**. If you want to change your local user information you can run this command and it will take you through the on-boarding process again.
+
+```
+$ gladius-node init
+[Gladius-Node] What's your email? (So we can contact you about the beta):  test@mail.com
+[Gladius-Node] What's your first name?  Marcelo
+[Gladius-Node] Short bio about why you're interested in Gladius:  I want to contribute my bandwidth to the Gladius Network!
+[Gladius-Node] Please make a new ETH wallet and paste your private key (include 0x at the beginning):   
+[Gladius-Node] Please enter a passphrase for your new PGP keys:   
+[Gladius-Node] User profile created! You may create a node with gladius-node create
+[Gladius-Node] If you'd like to change your information run gladius-node init again
+```
+
+#### **create**
+Create and deploy a Node smart contract. You only need 1 per computer. If you create a new Node it will disconnect you from your previous one.
+
+```
+$ gladius-node create
+[Gladius-Node] Please enter the passphrase for your PGP private key:  
+[Gladius-Node] Creating Node contract, please wait for tx to complete (this might take a couple of minutes)
+[Gladius-Node] Transaction: 0xe313b53a099addd8619f645ace76af2ddf9b4dae3e9c5ab307f2999cceb861a6	[Success]
+[Gladius-Node] Setting Node data, please wait for tx to complete (this might take a couple of minutes)
+[Gladius-Node] Transaction: 0x1f50a8fb77974c3543b977e42b96d0e5aa7d257ef6b7d5d98a38f7fcc3b95ffc	[Success]
+[Gladius-Node] Node successfully created and ready to use
+[Gladius-Node] Use gladius-node apply to apply to a pool
+```
+
+#### **apply**
+Apply to a pool. Enter the pool address and an application with all of your data will be sent to them. This information includes your name, email, bio, ip address, and node contract address. **Do not apply to pools that you don't trust.**
+
+```
+$ gladius-node apply
+[Gladius-Node] Please enter the passphrase for your PGP private key:  
+[Gladius-Node] Please enter the address of the pool you want to join:   0x2E27eE682C14f02daa106E8f659Ed8235ef11332
+[Gladius-Node] Transaction: 0x6f33237e886b1d89f69df375fc541cfe0f2b12dc9f22a9df65047c820555f8b9	[Success]
+[Gladius-Node] Application sent to Pool!
+[Gladius-Node] Use gladius-node check to check your application status
+```
+
+#### **check**
+Check the status of your application to a particular pool.
+
+```
+$ gladius-node check
+[Gladius-Node] Please enter the address of the pool you want to check on:   0x2E27eE682C14f02daa106E8f659Ed8235ef11332
+[Gladius-Node] Pool: 0x2E27eE682C14f02daa106E8f659Ed8235ef11332	[Application Status: Pending]
+[Gladius-Node] Wait until the pool manager accepts your application in order to become an edge node
+```
+
+#### **status**
+Check the status of the Gladius Control Daemon and Gladius Edge Daemon
+```
+$ gladius-node status
+[Gladius-Node] Gladius Control Daemon server is running!
+[Gladius-Node] Gladius Edge Daemon running, you are an edge node!
+[Gladius-Node] If you'd like to stop, run gladius-node stop
+```
+
+#### **start**
+Starts the edge node networking server. You can call this to become an edge node **after** you've been accepted to a pool.
+
+```
+$ gladius-node start
+[Gladius-Node] Gladius Edge Daemon running, you are now an edge node!
+[Gladius-Node] If you'd like to stop, run gladius-node stop
+```
+
+#### **stop**
+Stops the edge node networking server. You can call this to stop serving content.
+
+```
+$ gladius-node stop
+[Gladius-Node] Gladius Edge Daemon is not running
+[Gladius-Node] If you'd like to start, run gladius-node start
+```
+
+#### **gen-keys**
+Generate a new pair of PGP keys and a new passphrase. This happens during the **init** process but you can run this again if you forget your passphrase or want to generate new keys for any reason. After this you should do `gladius-node update-node` to update the information on your node contract with your new PGP keys
+
+```
+$ gladius-node gen-keys   
+[Gladius-Node] Please enter a passphrase for your new PGP keys:   
+[Gladius-Node] New PGP keys generated
+[Gladius-Node] Please run gladius-node update-node to update the information on your node contract
+
+```
+#### **update-node**
+Overwrites your current node information (that was set upon initial creation of your node contract) with your current user data
+
+```
+$ gladius-node update-node
+[Gladius-Node] Please enter the passphrase for your PGP private key:  
+[Gladius-Node] Transaction: 0xdeee16ac02f0e2080d91fdb3dd982dd78350b664eddf553d0ba902dbb54c0178	[Success]
+[Gladius-Node] Node information successfully update
+
+```
+
+#### **settings**
+Displays the information that the **gladius-control-daemon** is using
+
+```
+{ running: true,
+  privateKey: '0x1234567890123456789012345678901234567890123456789012345678901234',
+  address: '0xE9F75E329292758c2a77f30967304cD749a88837',
+  marketAddress: '0x0cd8d142238554acb52b17c9243baf6938ee3214',
+  nodeFactoryAddress: '0xfb834903bcdc3ab0a2409629e3c9303e6c567a40',
+  providerUrl: 'https://ropsten.infura.io/tjqLYxxGIUp0NylVCiWw',
+  endpoints: { start: 'http://localhost:3000/api/settings/start' }}
+
+```
+
+#### **reset**
+Manually wipe your local user profile. If you want to purge your user profile from your local machine run this.
+
+```
+$ gladius-node reset
+[Gladius-Node] User data has been reset
+```
+
+#### **--help**
+Brings up the help menu.
 
 ## Notes and warnings
-You can see a full list of the commands available (some may not be fully
- functional) by running `gladius-node --help`
-
-
-**Warning!** This is the beta implementation of the Gladius node, and as such it
-means there are some differences between how this functions and how future
-versions will. **Do not add private keys here that store more Ether or GLA (or
-any other cryptocurrency) than you are willing to lose.**
-
-In this version there is no way to specify the pool you would
-like to join, as the only pool available is run by Gladius. This version may
-also be less optimized than future versions, so run this on machines that you
-don't normally demand too much from.
+**Warning!** This is the beta implementation of the Gladius node. **Please** create a new ETH wallet before using this. Pools that you apply to will receive your name, email, bio, ip address, and node contract address. Therefore, **do not** apply to pools that you do not trust. At this time Gladius is running 1 official pool that is closed to the public and will not be advertised. If you choose to join an independent pool not run by Gladius, that is at your own risk. Gladius is not responsible for your data getting into the wrong hands. Use at your own risk.

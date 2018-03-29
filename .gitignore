@@ -56,5 +56,4 @@ typings/
 
 # dotenv environment variables file
 .env
-
-init.json
+nodeFile.json
