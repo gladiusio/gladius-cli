@@ -53,7 +53,7 @@ Here are some shortcuts to commands
     $ gladius-control                                                                       
     Running at http://localhost:3000
     ```
-  * Leave this running in a new window for the CLI to communicate
+  * **Leave this running in a new window for the CLI to communicate**
 
 ### Gladius Edge Daemon
 
@@ -64,7 +64,7 @@ Here are some shortcuts to commands
       $ gladius-edge                                                                       
       Running - Use "gladius-node start" to start it
       ```
-    * Leave this running in a new window for the CLI to communicate
+    * **Leave this running in a new window for the CLI to communicate**
 
 ### Gladius CLI
 
