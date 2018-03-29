@@ -607,7 +607,7 @@ function startNetworking() {
       console.log(colors.red("[Gladius-Node] ") + "Gladius Edge Daemon not running");
     }
     else {
-      console.log(colors.green("[Gladius-Node] ") + "Gladius Edge Daemon running, you are now an edge node!");
+      console.log(colors.green("[Gladius-Node] ") + "Gladius Edge Daemon running, you are now an edge node! (If you're a part of a pool)");
       console.log(colors.cyan("[Gladius-Node] ") + "If you'd like to stop, run " + colors.cyan("gladius-node stop"));
     }
   })

@@ -152,7 +152,7 @@ $ gladius-node status
 ```
 
 #### **start**
-Starts the edge node networking. You can call this to become an edge node **after** you've been accepted to a pool.
+Starts the edge node networking. You can call this to become an edge node **after** you've been accepted to a pool. If you call this without being accepted to a pool first your server will be running but no one will be able to connect to your machine since you are not part of a pool.
 
 ```
 $ gladius-node start
