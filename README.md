@@ -20,6 +20,14 @@ Here are some shortcuts to commands
 * Ubuntu
   * `curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -`
   * `sudo apt-get install -y nodejs`
+  * Change Global Installation Directory
+    * Our packages requires some dependencies that require superuser access if installed in the default Ubuntu paths. We recommend changing the default installation of global node modules to `~/.npm-global` as stated in the [npm.js docs](https://docs.npmjs.com/getting-started/fixing-npm-permissions#option-two-change-npms-default-directory). We included the commands below:
+      * Run `mkdir ~/.npm-global`
+      * Run `npm config set prefix '~/.npm-global'`
+      * Add `export PATH=~/.npm-global/bin:$PATH` to your `.profile` of `.zshrc` file
+      * Run `source ~/.profile`
+
+    * Another option is to use [NVM](https://docs.npmjs.com/getting-started/fixing-npm-permissions#option-one-reinstall-with-a-node-version-manager) to handle permissions.
 * macOS
   * Install Homebrew, [instructions](https://brew.sh/)
     * `/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`
@@ -33,18 +41,6 @@ Here are some shortcuts to commands
   * `apt-get install git`
 * macOS
   * Comes default with mac but can also be installed via [Homebrew](https://brew.sh/) (`brew install git`)
-
-#### Change Global Installation Directory
-
-**This is only necessary for Ubuntu / Linux installs.** Our packages requires some dependencies that require superuser access if installed in the default Ubuntu paths. We recommend changing the default installation of global node modules to `~/.npm-global` as stated in the [npm.js docs](https://docs.npmjs.com/getting-started/fixing-npm-permissions#option-two-change-npms-default-directory). We included the commands below:
-
-* Run `mkdir ~/.npm-global`
-* Run `npm config set prefix '~/.npm-global'`
-* Add `export PATH=~/.npm-global/bin:$PATH` to your `.profile` of `.zshrc` file
-* Run `source ~/.profile`
-
-Another option is to use [NVM](https://docs.npmjs.com/getting-started/fixing-npm-permissions#option-one-reinstall-with-a-node-version-manager) to handle permissions.
-
 
 ## Setup
 
