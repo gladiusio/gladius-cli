@@ -166,7 +166,7 @@ function init() {
       bio: result.bio,
       initialized: true // Set our initialized flag
     };
-
+    writeToFile("nodeFile", nodeFile); // Write it to a file
     fs.writeFileSync(appDir+"/keys/ethPvtKey.txt", result.pvtKey)
 
     genPGPKey(function() {
@@ -560,7 +560,7 @@ function genPGPKey(callback) {
     var F = kbpgp["const"].openpgp;
 
     var opts = {
-      userid: "User McTester (Born 1979) <user@example.com>",
+      userid: "Beta User: " + nodeFile.userData.name + " " + nodeFile.userData.email,
       primary: {
         nbits: 1024,
         flags: F.certify_keys | F.sign_data | F.auth | F.encrypt_comm,
