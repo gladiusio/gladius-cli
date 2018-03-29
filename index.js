@@ -9,18 +9,17 @@ Requires the Gladius daemon to be installed and running to opperate.
 */
 
 //We should have color (yellow probably) that indicates that the result of executing this action will incur gas costs
-
-var prompt = require("prompt");
-var colors = require("colors/safe");
-var fs = require("fs");
-var path = require("path");
-var axios = require("axios");
+var prompt = require("prompt")
+var colors = require("colors/safe")
+var fs = require("fs")
+var path = require("path")
+var axios = require("axios")
 var config = require("./config.js") // Load our config file
-var os = require("os");
-var {promisify} = require('util'); //<-- Require promisify
-var getIP = promisify(require('external-ip')()); // <-- And then wrap the library
-var rpc = require('node-json-rpc');
-var kbpgp = require('kbpgp');
+var os = require("os")
+var {promisify} = require('util') //<-- Require promisify
+var getIP = promisify(require('external-ip')()) // <-- And then wrap the library
+var rpc = require('node-json-rpc')
+var kbpgp = require('kbpgp')
 let settings = require("./settings.json")
 
 let appDir = path.dirname(require.main.filename); // Get where this file is
@@ -29,7 +28,7 @@ let pgpKey //pgp key
 let pvtKey //ETH wallet private key
 
 // Set up prompt
-prompt.message = colors.blue("[Gladius-Node]");
+prompt.message = colors.cyan("[Gladius-Node]");
 prompt.delimiter = " ";
 
 prompt.start();
@@ -60,11 +59,11 @@ var rpcClient = new rpc.Client(rpcOptions);
 */
 var options = {
   "init": {
-    description: "Gathers information about the user as well as configuration data.",
+    description: "Gathers information about the user and stores locally",
     toCall: function(){reset(init)}
   },
   "create": {
-    description: "Create a node",
+    description: "Create and deploy a Node smart contract",
     toCall: function(){postSettings(true, create)}
   },
   "apply": {
@@ -80,16 +79,25 @@ var options = {
     toCall: function(){postSettings(false, status)}
   },
   "start": { //
-    description: "Start accepting connections and acting as an edge node",
+    description: "Starts the edge node networking server",
     toCall: startNetworking
   },
   "stop": { //
-    description: "Stop accepting connections",
+    description: "Stops the edge node networking server",
     toCall: stopNetworking
   },
   "gen-keys": {
     description: "Generate new PGP keys",
-    toCall: function() {genPGPKey(function(){console.log(colors.green("[Gladius-Node] ") + "New PGP keys generated");})}
+    toCall: function() {
+      genPGPKey(function() {
+        console.log(colors.green("[Gladius-Node] ") + "New PGP keys generated")
+        console.log(colors.cyan("[Gladius-Node] ") + "Please run " + colors.cyan("gladius-node update-node") + " to update the information on your node contract");
+      })
+    }
+  },
+  "update-node": {
+    description: "Update the node information in the smart contract",
+    toCall: function(){postSettings(true, updateNodeData)}
   },
   "settings": { //
     description: "Show settings",
@@ -100,10 +108,10 @@ var options = {
     toCall: (locations)
   },
   "reset": {
-    description: "Resets init file (for testing or problem installations)",
+    description: "Resets user data file",
     toCall: function() {
       reset();
-      console.log(colors.blue("nodeFile.json has been reset"));
+      console.log(colors.cyan("[Gladius-Node]") + " User data has been reset");
     }
   },
   "test": {
@@ -166,9 +174,9 @@ function init() {
       .then(function(ip) {
         nodeFile.userData.ip = ip;
         writeToFile("nodeFile", nodeFile); // Write it to a file
-        // console.log(colors.green("[Gladius-Node]") + " User profile created! Please paste your ETH and PGP private keys in the " + colors.blue("./keys") + " directory");
-        console.log(colors.green("[Gladius-Node]") + " User profile created! You may create a node with " + colors.blue("gladius-node create"));
-        console.log(colors.green("[Gladius-Node]") + " If you'd like to change your information run " + colors.blue("gladius-node init") + " again");
+        // console.log(colors.green("[Gladius-Node]") + " User profile created! Please paste your ETH and PGP private keys in the " + colors.cyan("./keys") + " directory");
+        console.log(colors.green("[Gladius-Node]") + " User profile created! You may create a node with " + colors.cyan("gladius-node create"));
+        console.log(colors.green("[Gladius-Node]") + " If you'd like to change your information run " + colors.cyan("gladius-node init") + " again");
       })
       .catch(function(error){
         console.error(error);
@@ -185,12 +193,12 @@ function create() {
     //no data required, data is set AFTER you create the initial node contract
   })
   .then(function(res){
-    console.log(colors.blue("[Gladius-Node] ") + "Creating Node contract, please wait for tx to complete (this might take a couple of minutes) ");
+    console.log(colors.cyan("[Gladius-Node] ") + "Creating Node contract, please wait for tx to complete (this might take a couple of minutes) ");
 
     creationStatus(res.data.txHash, function(err, res) {
       if(res == colors.green("[Success]")) {
         console.log();
-        console.log(colors.blue("[Gladius-Node] ") + "Setting Node data, please wait for tx to complete (this might take a couple of minutes) ");
+        console.log(colors.cyan("[Gladius-Node] ") + "Setting Node data, please wait for tx to complete (this might take a couple of minutes) ");
 
         getNodeAddress(function() {
           setNodeData(function(tx) {
@@ -198,7 +206,7 @@ function create() {
               if(res == colors.green("[Success]")) {
                 console.log();
                 console.log(colors.green("[Gladius-Node] " + "Node successfully created and ready to use"));
-                console.log(colors.blue("[Gladius-Node] ") + "Use " + colors.blue("gladius-node apply") + " to apply to a pool");
+                console.log(colors.cyan("[Gladius-Node] ") + "Use " + colors.cyan("gladius-node apply") + " to apply to a pool");
               }
               else {
                 console.log(colors.red("[Gladius-Node] ") + "There was a problem accessing your Node Contract");
@@ -240,7 +248,7 @@ function apply() {
       creationStatus(res.data.tx, function(){
         console.log();
         console.log(colors.green("[Gladius-Node] Application sent to Pool!"));
-        console.log(colors.green("[Gladius-Node]") + " Use " + colors.blue("gladius-node check") + " to check your application status");
+        console.log(colors.green("[Gladius-Node]") + " Use " + colors.cyan("gladius-node check") + " to check your application status");
       })
     })
     .catch(function(err) {
@@ -312,7 +320,7 @@ function status(callback) {
     })
     .catch(function(err) {
       console.log(err);
-      console.log(colors.red("[Gladius-Node]") + " gladius-control-daemon server is down at "+ daemonAddress +" Run " + colors.blue("node index.js") + " in the gladius-control-daemon directory");
+      console.log(colors.red("[Gladius-Node]") + " gladius-control-daemon server is down at "+ daemonAddress +" Run " + colors.cyan("node index.js") + " in the gladius-control-daemon directory");
     });
 }
 
@@ -360,7 +368,7 @@ function creationStatus(tx, callback) {
         break;
       default:
         _status = "[Unknown]"
-        process.stdout.write(colors.blue("[Gladius-Node]")+ " Transaction: " + tx + "\t" + _status)
+        process.stdout.write(colors.cyan("[Gladius-Node]")+ " Transaction: " + tx + "\t" + _status)
         break;
     }
 
@@ -384,6 +392,23 @@ function setNodeData(callback) {
   .catch(function(err){
     console.log(err);
     console.log(colors.red("[Gladius-Node]") + " Error setting Node data");
+  })
+}
+
+/**
+* Update node data
+*/
+function updateNodeData() {
+  setNodeData(function(tx) {
+    creationStatus(tx, function(err,res) {
+      if(res == colors.green("[Success]")) {
+        console.log();
+        console.log(colors.green("[Gladius-Node] " + "Node information successfully update"));
+      }
+      else {
+        console.log(colors.red("[Gladius-Node] ") + "There was a problem updating your Node Contract");
+      }
+    })
   })
 }
 
@@ -437,7 +462,7 @@ function getKeys() {
 */
 function checkKeys(callback) {
   if (!fs.existsSync(appDir+"/keys/ethPvtKey.txt") || !fs.existsSync(appDir+"/keys/pgpPubKey.txt") || !fs.existsSync(appDir+"/keys/pgpPvtKey.txt")) {
-    console.log(colors.red("[Gladius-Node] ") + "You do not have any key files. Run " + colors.blue("gladius-node init") + " to set up your information");
+    console.log(colors.red("[Gladius-Node] ") + "You do not have any key files. Run " + colors.cyan("gladius-node init") + " to set up your information");
     process.exit(1);
   }
   else {
@@ -470,7 +495,7 @@ function checkPoolStatus() {
         switch(res.data.code) {
           case 1:
             poolStatus = colors.green("[Gladius-Node] ") + "Pool: " + result.poolAddress + "\t" + colors.green("[Application Status: Green]")
-            message = colors.green("[Gladius-Node] ") + "You've been accepted! Use " + colors.blue("gladius-node start") + " to start accepting connections!"
+            message = colors.green("[Gladius-Node] ") + "You've been accepted! Use " + colors.cyan("gladius-node start") + " to start accepting connections!"
             break;
           case 2:
             poolStatus = colors.red("[Gladius-Node] ") + "Pool: " + result.poolAddress + "\t" + colors.red("[Application Status: Rejected]");
@@ -482,7 +507,7 @@ function checkPoolStatus() {
             break;
           default:
           poolStatus = colors.magenta("[Gladius-Node] ") + "Pool: " + result.poolAddress + "\t" + colors.red("[Application Status: Not Sent]");
-          message = colors.magenta("[Gladius-Node] ") + "You have not sent an application to this pool. Use " + colors.blue("gladius-node apply") + " to apply"
+          message = colors.magenta("[Gladius-Node] ") + "You have not sent an application to this pool. Use " + colors.cyan("gladius-node apply") + " to apply"
           break;
         }
         console.log(poolStatus);
@@ -578,29 +603,32 @@ function startNetworking() {
   rpcClient.call( {"jsonrpc": "2.0", "method": "start", "id": 1}, function (err, res) {
     if(err) {
       console.log(err);
-      console.log(colors.red("[Gladius-Node] ") + "gladius edge daemon not running");
+      console.log(colors.red("[Gladius-Node] ") + "Gladius Edge Daemon not running");
     }
     else {
-      console.log(colors.green("[Gladius-Node] ") + "gladius edge daemon running, you are now an edge node!");
-      console.log(colors.blue("[Gladius-Node] ") + "If you'd like to stop, run " + colors.blue("gladius-node stop"));
+      console.log(colors.green("[Gladius-Node] ") + "Gladius Edge Daemon running, you are now an edge node!");
+      console.log(colors.cyan("[Gladius-Node] ") + "If you'd like to stop, run " + colors.cyan("gladius-node stop"));
     }
   })
 }
 
+/*
+* status of the networking daemon
+*/
 function statusNetworking() {
   rpcClient.call( {"jsonrpc": "2.0", "method": "status", "id": 1}, function (err, res) {
     if(err) {
       console.log(err);
-      console.log(colors.red("[Gladius-Node] ") + "gladius edge daemon not running");
+      console.log(colors.red("[Gladius-Node] ") + "Gladius Edge Daemon not running!");
     }
     else {
       if(res.result.running) {
         console.log(colors.green("[Gladius-Node] ") + "Gladius Edge Daemon running, you are an edge node!");
-        console.log(colors.blue("[Gladius-Node] ") + "If you'd like to stop, run " + colors.blue("gladius-node stop"));
+        console.log(colors.cyan("[Gladius-Node] ") + "If you'd like to stop, run " + colors.cyan("gladius-node stop"));
       }
       else {
-        console.log(colors.red("[Gladius-Node] ") + "gladius edge daemon is not running");
-        console.log(colors.blue("[Gladius-Node] ") + "If you'd like to start, run " + colors.blue("gladius-node start"));
+        console.log(colors.yellow("[Gladius-Node] ") + "Gladius Edge Daemon is running but you are not an edge node!");
+        console.log(colors.cyan("[Gladius-Node] ") + "If you'd like to start, run " + colors.cyan("gladius-node start"));
       }
     }
   })
@@ -613,11 +641,11 @@ function stopNetworking() {
   rpcClient.call( {"jsonrpc": "2.0", "method": "stop", "id": 1}, function (err, res) {
     if(err) {
       console.log(err);
-      console.log(colors.red("[Gladius-Node] ") + "gladius edge daemon error");
+      console.log(colors.red("[Gladius-Node] ") + "Gladius Edge Daemon error");
     }
     else {
-      console.log(colors.red("[Gladius-Node] ") + "gladius edge daemon is not running");
-      console.log(colors.blue("[Gladius-Node] ") + "If you'd like to start, run " + colors.blue("gladius-node start"));
+      console.log(colors.red("[Gladius-Node] ") + "Gladius Edge Daemon is not running");
+      console.log(colors.cyan("[Gladius-Node] ") + "If you'd like to start, run " + colors.cyan("gladius-node start"));
     }
   })
 }
@@ -628,11 +656,11 @@ function stopNetworking() {
 * @param options - commands that the users run
 */
 function help(options) {
-  console.log(colors.blue(
+  console.log(colors.cyan(
       "\n--------------Available arguments-------------- \n") +
     Object.keys(options).map(
       function(key) {
-        return ("\n\n" + colors.blue(key) + ": " + options[key].description);
+        return ("\n" + colors.cyan(key) + ": " + options[key].description);
       }
     ).join(""));
 }
@@ -672,7 +700,7 @@ status(function() {
   if (argument in options) {
     options[argument].toCall();
   } else {
-    console.log(colors.red("[Gladius-Node]") + " Invalid arguments. See " + colors.blue("gladius-node --help") + " for a list of commands");
+    console.log(colors.red("[Gladius-Node]") + " Invalid arguments. See " + colors.cyan("gladius-node --help") + " for a list of commands");
   }
 })
 
