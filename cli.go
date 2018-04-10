@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -13,16 +12,22 @@ type node struct {
 	Address string `json:"address"`
 }
 
-func main() {
-	url := "http://localhost:3000/api/node"
+// For control over HTTP client headers,
+// redirect policy, and other settings,
+// create a Client
+// A Client is an HTTP client
+var client = &http.Client{
+	Timeout: time.Second * 10, //10 second timeout
+}
 
-	// For control over HTTP client headers,
-	// redirect policy, and other settings,
-	// create a Client
-	// A Client is an HTTP client
-	client := &http.Client{
-		Timeout: time.Second * 10, //10 second timeout
-	}
+func main() {
+
+	controlSettings()
+
+}
+
+func controlSettings() {
+	url := "http://localhost:3000/api/node"
 
 	// Build the request
 	req, err := http.NewRequest("GET", url, nil)
@@ -45,17 +50,16 @@ func main() {
 		log.Fatal(readErr)
 	}
 
-	node1 := node{}
-	jsonErr := json.Unmarshal(body, &node1)
-	if jsonErr != nil {
-		log.Fatal(jsonErr)
-	}
+	// myNode := node{}
+	// jsonErr := json.Unmarshal(body, &myNode)
+	// if jsonErr != nil {
+	// 	log.Fatal(jsonErr)
+	// }
 
 	// Callers should close resp.Body
 	// when done reading from it
 	// Defer the closing of the body
 	defer res.Body.Close()
 
-	fmt.Println(node1.Address)
-
+	fmt.Println(string(body))
 }
