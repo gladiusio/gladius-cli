@@ -1,0 +1,9 @@
+package: github.com/gladiusio/gladius-cli
+import:
+- package: github.com/fsnotify/fsnotify
+- package: github.com/powerman/rpc-codec
+  subpackages:
+  - jsonrpc2
+- package: github.com/spf13/cobra
+- package: github.com/spf13/viper
+- package: gopkg.in/AlecAivazis/survey.v1
