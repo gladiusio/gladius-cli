@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gladiusio/gladius-cli/pkg"
+	"github.com/gladiusio/gladius-cli/node"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
