@@ -22,7 +22,7 @@ endif
 SRC_DIR=./cmd
 DST_DIR=./build
 
-CLI_SRC=$(SRC_DIR)/gladius-cli
+CLI_SRC=$(SRC_DIR)
 CLI_DEST=$(DST_DIR)/gladius-cli$(BINARY_SUFFIX)
 
 # commands for go
@@ -33,7 +33,7 @@ GOTEST=go test
 ##
 
 # general make targets
-all: build-all
+all: cli
 
 clean:
 	rm -rf ./build/*
@@ -42,13 +42,14 @@ clean:
 # dependency management
 dependencies:
 	# install go packages
-	glide install
+	dep ensure
+
+release:
+	sh release-all.sh
 
 # build steps
-test-cli: $(CLI_SRC)
+test: $(CLI_SRC)
 	$(GOTEST) $(CLI_SRC)
 
-cli: test-cli
+cli: test
 	$(GOBUILD) -o $(CLI_DEST) $(CLI_SRC)
-
-build-all: cli

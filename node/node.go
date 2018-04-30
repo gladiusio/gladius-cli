@@ -55,7 +55,8 @@ func Test(myNode Node) {
 	}
 }
 
-// SetSettings settings struct
+// SetSettings - inform the localSettings struct
+// All of these are throwaway key settings that will be replaced by a config file soon
 func SetSettings(network string, localSettings *Settings) {
 	if strings.Compare(network, "ropsten") == 0 {
 		localSettings.Provider = "https://ropsten.infura.io/tjqLYxxGIUp0NylVCiWw"
@@ -74,7 +75,7 @@ func SetSettings(network string, localSettings *Settings) {
 	}
 }
 
-// PostSettings - does this ...
+// PostSettings - posts user settings to the api
 func PostSettings(localSettings *Settings) bool {
 	url := "http://localhost:3000/api/settings/start"
 
@@ -88,7 +89,7 @@ func PostSettings(localSettings *Settings) bool {
 
 }
 
-// GetSettings -get settings from API
+// GetSettings - get settings from API
 func GetSettings() {
 	url := "http://localhost:3000/api/settings/"
 
@@ -274,7 +275,7 @@ func StatusEdgeNode() string {
 	return reply
 }
 
-// send requests
+// custom function to make sending request less of a pain in the arse
 func sendRequest(requestType, url string, data interface{}) (string, error) {
 
 	b := bytes.Buffer{}
