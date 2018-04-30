@@ -22,7 +22,7 @@ endif
 SRC_DIR=./cmd
 DST_DIR=./build
 
-CLI_SRC=$(SRC_DIR)/gladius-cli
+CLI_SRC=$(SRC_DIR)
 CLI_DEST=$(DST_DIR)/gladius-cli$(BINARY_SUFFIX)
 
 # commands for go

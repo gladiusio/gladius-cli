@@ -11,7 +11,7 @@ import (
 
 var localSettings = node.Settings{}
 
-// var myNode = node.Node{}
+// random test pool
 var poolAddress = "0xC88a29cf8F0Baf07fc822DEaA24b383Fc30f27e4"
 
 var cmdEcho = &cobra.Command{
@@ -53,7 +53,7 @@ var cmdEdge = &cobra.Command{
 
 var cmdTest = &cobra.Command{
 	Use:   "test",
-	Short: "Test random shit",
+	Short: "Test function",
 	Long:  "Have something to test but dont want to ruin everything else? Put it in this command!",
 	Run:   test,
 }
@@ -68,14 +68,9 @@ func createNewNode(cmd *cobra.Command, args []string) {
 			Transform: survey.Title,
 		},
 		{
-			Name:      "email",
-			Prompt:    &survey.Input{Message: "What is your email?"},
-			Validate:  survey.Required,
-			Transform: survey.Title,
-		},
-		{
-			Name:   "ipaddress",
-			Prompt: &survey.Input{Message: "How old are you?"},
+			Name:     "email",
+			Prompt:   &survey.Input{Message: "What is your email?"},
+			Validate: survey.Required,
 		},
 	}
 
@@ -88,6 +83,7 @@ func createNewNode(cmd *cobra.Command, args []string) {
 		fmt.Println(err.Error())
 		return
 	}
+	answers.Data.IPAddress = "1.1.1.1"
 	answers.Data.Status = "active"
 
 	tx, err := node.CreateNode()
