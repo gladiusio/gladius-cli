@@ -10,11 +10,11 @@ This is an all-in-one Command Line Interface for the Gladius Network
 
 This CLI includes commands to run different modules of the Gladius Network. To actually use it you need one or more of those modules to be running so that the CLI can communicate with the Gladius Network. As of now this CLI supports communication with the [gladius-control-daemon](https://github.com/gladiusio/gladius-control-daemon) and the [gladius-networkd](https://github.com/gladiusio/gladius-networkd). **You need to be running at least one of these modules in order for the CLI to be able to do anything.**
 
-1. `$ cd gladius-cli`
-2. `$ make dependencies`
+1. `> cd gladius-cli`
+2. `> make dependencies`
 3. Run one or both of the modules mentioned above
-4. `cd gladius-cli/build`
-5. `./gladius-cli --help`
+4. `> cd gladius-cli/build`
+5. `> ./gladius-cli --help`
   * This runs the CLI executable and displays all available commands
 6. Use `./gladius-cli [command] --help` for usage and help information for specific commands
 
