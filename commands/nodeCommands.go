@@ -83,12 +83,14 @@ func createNewNode(cmd *cobra.Command, args []string) {
 		fmt.Println(err.Error())
 		return
 	}
+
 	answers.Data.IPAddress = "1.1.1.1"
 	answers.Data.Status = "active"
 
 	tx, err := node.CreateNode()
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	node.WaitForTx(tx)
@@ -98,6 +100,7 @@ func createNewNode(cmd *cobra.Command, args []string) {
 	tx, err = node.SetNodeData(nodeAddress, answers)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	node.WaitForTx(tx)
@@ -107,9 +110,37 @@ func createNewNode(cmd *cobra.Command, args []string) {
 }
 
 func applyToPool(cmd *cobra.Command, args []string) {
-	tx, err := node.ApplyToPool(args[0], poolAddress)
+
+	var qs = []*survey.Question{
+		{
+			Name:     "node",
+			Prompt:   &survey.Input{Message: "Node Address: "},
+			Validate: survey.Required,
+		},
+		{
+			Name:     "pool",
+			Prompt:   &survey.Input{Message: "Pool Address: "},
+			Validate: survey.Required,
+		},
+	}
+
+	// the answers will be written to this struct
+	answers := struct {
+		Node string
+		Pool string
+	}{}
+
+	// perform the questions
+	err := survey.Ask(qs, &answers)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	tx, err := node.ApplyToPool(answers.Node, answers.Pool)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	node.WaitForTx(tx)
@@ -117,7 +148,34 @@ func applyToPool(cmd *cobra.Command, args []string) {
 }
 
 func checkPoolApp(cmd *cobra.Command, args []string) {
-	status := node.CheckPoolApplication(args[0], poolAddress)
+
+	qs := []*survey.Question{
+		{
+			Name:     "node",
+			Prompt:   &survey.Input{Message: "Node Address: "},
+			Validate: survey.Required,
+		},
+		{
+			Name:     "pool",
+			Prompt:   &survey.Input{Message: "Pool Address: "},
+			Validate: survey.Required,
+		},
+	}
+
+	// the answers will be written to this struct
+	answers := struct {
+		Node string
+		Pool string
+	}{}
+
+	// perform the questions
+	err := survey.Ask(qs, &answers)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	status := node.CheckPoolApplication(answers.Node, answers.Pool)
 	fmt.Println("Pool: " + poolAddress + "\t Status: " + status)
 }
 
