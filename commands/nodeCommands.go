@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/gladiusio/gladius-cli/node"
@@ -200,37 +201,8 @@ func echoRun(cmd *cobra.Command, args []string) {
 }
 
 func test(cmd *cobra.Command, args []string) {
-	var qs = []*survey.Question{
-		{
-			Name:      "name",
-			Prompt:    &survey.Input{Message: "What is your name?"},
-			Validate:  survey.Required,
-			Transform: survey.Title,
-		},
-		{
-			Name: "email",
-			Prompt: &survey.Select{
-				Message: "Choose a color:",
-				Options: []string{"red", "blue", "green"},
-				Default: "red",
-			},
-		},
-		{
-			Name:   "ipaddress",
-			Prompt: &survey.Input{Message: "How old are you?"},
-		},
-	}
-
-	// the answers will be written to this struct
-	answers := node.Node{}
-
-	// perform the questions
-	err := survey.Ask(qs, &answers.Data)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	fmt.Printf("Name: %s\t Email: %s\t IP: %s\n", answers.Data.Name, answers.Data.Email, answers.Data.IPAddress)
+	fmt.Println("FOO:")
+	fmt.Println(os.Getenv("FOO"))
 }
 
 func init() {
