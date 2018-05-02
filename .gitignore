@@ -22,3 +22,7 @@ build/
 # go dep
 Gopkg.lock
 Gopkg.toml
+
+# env
+env.toml
+output.toml

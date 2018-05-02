@@ -1,19 +1,20 @@
 package commands
 
 import (
+	"bytes"
 	"fmt"
-	"os"
+	"io/ioutil"
+	"log"
 	"strings"
 
+	"github.com/BurntSushi/toml"
+	"github.com/gladiusio/gladius-cli/internal"
 	"github.com/gladiusio/gladius-cli/node"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
-var localSettings = node.Settings{}
-
-// random test pool
-var poolAddress = "0xC88a29cf8F0Baf07fc822DEaA24b383Fc30f27e4"
+var poolAddress = "0x"
 
 var cmdEcho = &cobra.Command{
 	Use:   "echo [string to echo]",
@@ -118,17 +119,11 @@ func applyToPool(cmd *cobra.Command, args []string) {
 			Prompt:   &survey.Input{Message: "Node Address: "},
 			Validate: survey.Required,
 		},
-		{
-			Name:     "pool",
-			Prompt:   &survey.Input{Message: "Pool Address: "},
-			Validate: survey.Required,
-		},
 	}
 
 	// the answers will be written to this struct
 	answers := struct {
 		Node string
-		Pool string
 	}{}
 
 	// perform the questions
@@ -138,7 +133,11 @@ func applyToPool(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	tx, err := node.ApplyToPool(answers.Node, answers.Pool)
+	envFile, err := utils.GetEnvMap("env.toml")
+
+	envPool := envFile["environment"]["poolAddress"]
+
+	tx, err := node.ApplyToPool(answers.Node, envPool)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -201,8 +200,27 @@ func echoRun(cmd *cobra.Command, args []string) {
 }
 
 func test(cmd *cobra.Command, args []string) {
-	fmt.Println("FOO:")
-	fmt.Println(os.Getenv("FOO"))
+	b, err := ioutil.ReadFile("env.toml") // read env file
+	if err != nil {
+		fmt.Println("Error reading: " + "env.toml")
+	}
+
+	var envFile = make(map[string]map[string]string)
+
+	if _, err := toml.Decode(string(b), &envFile); err != nil { // turn file into mapping
+		fmt.Println("Error decoding")
+	}
+
+	envFile["node"]["Hello"] = "World"
+
+	buf := new(bytes.Buffer)
+	if err := toml.NewEncoder(buf).Encode(envFile); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(buf.String())
+	err = ioutil.WriteFile("output.toml", (*buf).Bytes(), 0644)
+
 }
 
 func init() {
@@ -213,8 +231,7 @@ func init() {
 	// myNode.Data.IPAddress = "1.1.1.1"
 	// myNode.Data.Status = "active"
 
-	node.SetSettings("ropsten", &localSettings)
-	node.PostSettings(&localSettings)
+	node.PostSettings("env.toml")
 
 	rootCmd.AddCommand(cmdEcho)
 	rootCmd.AddCommand(cmdCreate)
