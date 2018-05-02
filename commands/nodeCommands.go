@@ -14,8 +14,6 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
-var poolAddress = "0x"
-
 var cmdEcho = &cobra.Command{
 	Use:   "echo [string to echo]",
 	Short: "Echo anything to the screen",
@@ -33,14 +31,14 @@ var cmdCreate = &cobra.Command{
 }
 
 var cmdApply = &cobra.Command{
-	Use:   "apply [node address]",
+	Use:   "apply",
 	Short: "Apply to a Gladius Pool",
 	Long:  "Send your Node's data (encrypted) to the pool owner as an application",
 	Run:   applyToPool,
 }
 
 var cmdCheck = &cobra.Command{
-	Use:   "check [node address]",
+	Use:   "check",
 	Short: "Check status of your submitted pool application",
 	Long:  "Check status of your submitted pool application",
 	Run:   checkPoolApp,
@@ -61,7 +59,6 @@ var cmdTest = &cobra.Command{
 }
 
 func createNewNode(cmd *cobra.Command, args []string) {
-
 	var qs = []*survey.Question{
 		{
 			Name:      "name",
@@ -89,16 +86,50 @@ func createNewNode(cmd *cobra.Command, args []string) {
 	answers.Data.IPAddress = "1.1.1.1"
 	answers.Data.Status = "active"
 
+	// save the struct to a file (im gonna turn these into go routines and hopefully find a good way to condense these lines)
+	if err = utils.WriteToEnv("node", "type", "node", "output.toml", "output.toml"); err != nil {
+		fmt.Println(err)
+		return
+	}
+	if err = utils.WriteToEnv("node", "status", answers.Data.Status, "output.toml", "output.toml"); err != nil {
+		fmt.Println(err)
+		return
+	}
+	if err = utils.WriteToEnv("node", "name", answers.Data.Name, "output.toml", "output.toml"); err != nil {
+		fmt.Println(err)
+		return
+	}
+	if err = utils.WriteToEnv("node", "email", answers.Data.Email, "output.toml", "output.toml"); err != nil {
+		fmt.Println(err)
+		return
+	}
+	if err = utils.WriteToEnv("node", "ipAddress", answers.Data.IPAddress, "output.toml", "output.toml"); err != nil {
+		fmt.Println(err)
+		return
+	}
+	if err = utils.WriteToEnv("node", "status", answers.Data.Status, "output.toml", "output.toml"); err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// create the node
 	tx, err := node.CreateNode()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-
+	fmt.Println("")
 	node.WaitForTx(tx)
+
+	// save the node address
 	nodeAddress := node.GetNodeAddress()
+	if err = utils.WriteToEnv("node", "address", nodeAddress, "output.toml", "output.toml"); err != nil {
+		fmt.Println(err)
+		return
+	}
 	fmt.Println("Node created!")
 
+	// set node data
 	tx, err = node.SetNodeData(nodeAddress, answers)
 	if err != nil {
 		fmt.Println(err)
@@ -112,32 +143,19 @@ func createNewNode(cmd *cobra.Command, args []string) {
 }
 
 func applyToPool(cmd *cobra.Command, args []string) {
+	envFile, err := utils.GetEnvMap("output.toml")
+	envNode := envFile["node"]
+	env := envFile["environment"]
 
-	var qs = []*survey.Question{
-		{
-			Name:     "node",
-			Prompt:   &survey.Input{Message: "Node Address: "},
-			Validate: survey.Required,
-		},
+	fmt.Println(env["poolAddress"])
+
+	poolAddy := ""
+	prompt := &survey.Input{
+		Message: "Pool Address: ",
 	}
+	survey.AskOne(prompt, &poolAddy, nil)
 
-	// the answers will be written to this struct
-	answers := struct {
-		Node string
-	}{}
-
-	// perform the questions
-	err := survey.Ask(qs, &answers)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-
-	envFile, err := utils.GetEnvMap("env.toml")
-
-	envPool := envFile["environment"]["poolAddress"]
-
-	tx, err := node.ApplyToPool(answers.Node, envPool)
+	tx, err := node.ApplyToPool(envNode["address"], poolAddy)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -148,35 +166,25 @@ func applyToPool(cmd *cobra.Command, args []string) {
 }
 
 func checkPoolApp(cmd *cobra.Command, args []string) {
-
-	qs := []*survey.Question{
-		{
-			Name:     "node",
-			Prompt:   &survey.Input{Message: "Node Address: "},
-			Validate: survey.Required,
-		},
-		{
-			Name:     "pool",
-			Prompt:   &survey.Input{Message: "Pool Address: "},
-			Validate: survey.Required,
-		},
-	}
-
-	// the answers will be written to this struct
-	answers := struct {
-		Node string
-		Pool string
-	}{}
-
-	// perform the questions
-	err := survey.Ask(qs, &answers)
+	envFile, err := utils.GetEnvMap("output.toml")
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println(err)
 		return
 	}
 
-	status := node.CheckPoolApplication(answers.Node, answers.Pool)
-	fmt.Println("Pool: " + poolAddress + "\t Status: " + status)
+	envNode := envFile["node"]
+	env := envFile["environment"]
+
+	fmt.Println(env["poolAddress"])
+
+	poolAddy := ""
+	prompt := &survey.Input{
+		Message: "Pool Address: ",
+	}
+	survey.AskOne(prompt, &poolAddy, nil)
+
+	status := node.CheckPoolApplication(envNode["address"], poolAddy)
+	fmt.Println("Pool: " + poolAddy + "\t Status: " + status)
 }
 
 func edge(cmd *cobra.Command, args []string) {
@@ -200,7 +208,7 @@ func echoRun(cmd *cobra.Command, args []string) {
 }
 
 func test(cmd *cobra.Command, args []string) {
-	b, err := ioutil.ReadFile("env.toml") // read env file
+	b, err := ioutil.ReadFile("output.toml") // read env file
 	if err != nil {
 		fmt.Println("Error reading: " + "env.toml")
 	}
@@ -211,7 +219,7 @@ func test(cmd *cobra.Command, args []string) {
 		fmt.Println("Error decoding")
 	}
 
-	envFile["node"]["Hello"] = "World"
+	envFile["node"]["hello"] = "test"
 
 	buf := new(bytes.Buffer)
 	if err := toml.NewEncoder(buf).Encode(envFile); err != nil {
@@ -221,16 +229,11 @@ func test(cmd *cobra.Command, args []string) {
 	fmt.Println(buf.String())
 	err = ioutil.WriteFile("output.toml", (*buf).Bytes(), 0644)
 
+	// utils.WriteToEnv("node", "another", "test", "env.toml", "output.toml")
+
 }
 
 func init() {
-
-	// all of this will go in some config file
-	// myNode.Data.Name = "celo-test-4"
-	// myNode.Data.Email = "celo@gladius.io"
-	// myNode.Data.IPAddress = "1.1.1.1"
-	// myNode.Data.Status = "active"
-
 	node.PostSettings("env.toml")
 
 	rootCmd.AddCommand(cmdEcho)
