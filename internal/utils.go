@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -122,7 +123,7 @@ func ControlDaemonHandler(_res []byte) (interface{}, error) {
 	}
 
 	if !response.Success {
-		fmt.Println(response.Message)
+		return nil, errors.New(response.Message)
 	}
 
 	return response, nil
