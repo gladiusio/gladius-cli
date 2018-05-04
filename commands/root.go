@@ -13,7 +13,7 @@ var rootCmd = &cobra.Command{
 	Short: "CLI for Gladius Network",
 	Long:  "Gladius CLI. This can be used to interact with various components of the Gladius Network.",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Hello world :)")
+		fmt.Println("Welcome to the Gladius CLI! Use the -h flag to see the help menu.")
 	},
 }
 

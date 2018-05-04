@@ -44,9 +44,6 @@ dependencies:
 	# install go packages
 	dep ensure
 
-release:
-	sh release-all.sh
-
 # build steps
 test: $(CLI_SRC)
 	$(GOTEST) $(CLI_SRC)
