@@ -1,4 +1,4 @@
-# Gladius CLI
+## Gladius CLI
 
 This is an all-in-one Command Line Interface for the Gladius Network
 
