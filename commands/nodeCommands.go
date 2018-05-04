@@ -1,13 +1,11 @@
 package commands
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
-	"log"
+	"net/http"
 	"strings"
+	"time"
 
-	"github.com/BurntSushi/toml"
 	"github.com/gladiusio/gladius-cli/internal"
 	"github.com/gladiusio/gladius-cli/node"
 	"github.com/spf13/cobra"
@@ -215,33 +213,20 @@ func echoRun(cmd *cobra.Command, args []string) {
 }
 
 func test(cmd *cobra.Command, args []string) {
-	b, err := ioutil.ReadFile("env.toml") // read env file
-	if err != nil {
-		fmt.Println("Error reading: " + "env.toml")
+	var client = &http.Client{
+		Timeout: time.Second * 10, //10 second timeout
 	}
 
-	var envFile = make(map[string]map[string]string)
+	res, err := utils.SendRequest(client, "GET", "http://localhost:3001/api/node/", nil)
+	fmt.Println(err)
+	fmt.Println(res)
 
-	if _, err := toml.Decode(string(b), &envFile); err != nil { // turn file into mapping
-		fmt.Println("Error decoding")
-	}
-
-	envFile["node"]["hello"] = "test"
-
-	buf := new(bytes.Buffer)
-	if err := toml.NewEncoder(buf).Encode(envFile); err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(buf.String())
-	err = ioutil.WriteFile("env.toml", (*buf).Bytes(), 0644)
-
-	// utils.WriteToEnv("node", "another", "test", "env.toml", "env.toml")
-
+	utils.ControlDaemonHandler([]byte(res))
+	fmt.Println(res)
 }
 
 func init() {
-	node.PostSettings("env.toml")
+	// node.PostSettings("env.toml")
 
 	rootCmd.AddCommand(cmdEcho)
 	rootCmd.AddCommand(cmdCreate)

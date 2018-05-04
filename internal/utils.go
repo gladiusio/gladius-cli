@@ -103,3 +103,27 @@ func WriteToEnv(section, key, value, source, destination string) error {
 
 	return nil
 }
+
+// handle the control daemon responses
+func ControlDaemonHandler(_res []byte) (interface{}, error) {
+	type apiResponse struct {
+		Message  string      `json:"message"`
+		Success  bool        `json:"success"`
+		Error    string      `json:"error"`
+		Response interface{} `json:"response"`
+		Endpoint string      `json:"endpoint"`
+	}
+
+	var response = apiResponse{}
+
+	err := json.Unmarshal(_res, &response)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+
+	if !response.Success {
+		fmt.Println(response.Message)
+	}
+
+	return response, nil
+}
