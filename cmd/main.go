@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/gladiusio/gladius-cli/commands"
 	// "github.com/gladiusio/gladius-utils/config"
 )
@@ -9,5 +12,9 @@ import (
 func main() {
 	// Setup config handling
 	// config.SetupConfig("test", config.CLIDefaults())
-	commands.Execute()
+	if _, err := os.Stat("env.toml"); os.IsNotExist(err) {
+		fmt.Println("env.toml not found. Please refer to the README.md to create this file")
+	} else {
+		commands.Execute()
+	}
 }

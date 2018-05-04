@@ -58,6 +58,7 @@ var cmdTest = &cobra.Command{
 	Run:   test,
 }
 
+// collect user info, create node, set node data
 func createNewNode(cmd *cobra.Command, args []string) {
 	var qs = []*survey.Question{
 		{
@@ -83,31 +84,32 @@ func createNewNode(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	// need to collect ip
 	answers.Data.IPAddress = "1.1.1.1"
 	answers.Data.Status = "active"
 
 	// save the struct to a file (im gonna turn these into go routines and hopefully find a good way to condense these lines)
-	if err = utils.WriteToEnv("node", "type", "node", "output.toml", "output.toml"); err != nil {
+	if err = utils.WriteToEnv("node", "type", "node", "env.toml", "env.toml"); err != nil {
 		fmt.Println(err)
 		return
 	}
-	if err = utils.WriteToEnv("node", "status", answers.Data.Status, "output.toml", "output.toml"); err != nil {
+	if err = utils.WriteToEnv("node", "status", answers.Data.Status, "env.toml", "env.toml"); err != nil {
 		fmt.Println(err)
 		return
 	}
-	if err = utils.WriteToEnv("node", "name", answers.Data.Name, "output.toml", "output.toml"); err != nil {
+	if err = utils.WriteToEnv("node", "name", answers.Data.Name, "env.toml", "env.toml"); err != nil {
 		fmt.Println(err)
 		return
 	}
-	if err = utils.WriteToEnv("node", "email", answers.Data.Email, "output.toml", "output.toml"); err != nil {
+	if err = utils.WriteToEnv("node", "email", answers.Data.Email, "env.toml", "env.toml"); err != nil {
 		fmt.Println(err)
 		return
 	}
-	if err = utils.WriteToEnv("node", "ipAddress", answers.Data.IPAddress, "output.toml", "output.toml"); err != nil {
+	if err = utils.WriteToEnv("node", "ipAddress", answers.Data.IPAddress, "env.toml", "env.toml"); err != nil {
 		fmt.Println(err)
 		return
 	}
-	if err = utils.WriteToEnv("node", "status", answers.Data.Status, "output.toml", "output.toml"); err != nil {
+	if err = utils.WriteToEnv("node", "status", answers.Data.Status, "env.toml", "env.toml"); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -123,7 +125,7 @@ func createNewNode(cmd *cobra.Command, args []string) {
 
 	// save the node address
 	nodeAddress := node.GetNodeAddress()
-	if err = utils.WriteToEnv("node", "address", nodeAddress, "output.toml", "output.toml"); err != nil {
+	if err = utils.WriteToEnv("node", "address", nodeAddress, "env.toml", "env.toml"); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -142,13 +144,15 @@ func createNewNode(cmd *cobra.Command, args []string) {
 	fmt.Println("\n" + nodeAddress)
 }
 
+// send data to pool
 func applyToPool(cmd *cobra.Command, args []string) {
-	envFile, err := utils.GetEnvMap("output.toml")
+	envFile, err := utils.GetEnvMap("env.toml")
 	envNode := envFile["node"]
 	env := envFile["environment"]
 
 	fmt.Println(env["poolAddress"])
 
+	// build question
 	poolAddy := ""
 	prompt := &survey.Input{
 		Message: "Pool Address: ",
@@ -165,8 +169,9 @@ func applyToPool(cmd *cobra.Command, args []string) {
 	fmt.Println("Application sent to pool!")
 }
 
+// check the application of the node
 func checkPoolApp(cmd *cobra.Command, args []string) {
-	envFile, err := utils.GetEnvMap("output.toml")
+	envFile, err := utils.GetEnvMap("env.toml")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -177,6 +182,7 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 
 	fmt.Println(env["poolAddress"])
 
+	// build the prompt
 	poolAddy := ""
 	prompt := &survey.Input{
 		Message: "Pool Address: ",
@@ -187,6 +193,7 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 	fmt.Println("Pool: " + poolAddy + "\t Status: " + status)
 }
 
+// start - stop - status of the edge daemon
 func edge(cmd *cobra.Command, args []string) {
 
 	var reply string
@@ -208,7 +215,7 @@ func echoRun(cmd *cobra.Command, args []string) {
 }
 
 func test(cmd *cobra.Command, args []string) {
-	b, err := ioutil.ReadFile("output.toml") // read env file
+	b, err := ioutil.ReadFile("env.toml") // read env file
 	if err != nil {
 		fmt.Println("Error reading: " + "env.toml")
 	}
@@ -227,9 +234,9 @@ func test(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Println(buf.String())
-	err = ioutil.WriteFile("output.toml", (*buf).Bytes(), 0644)
+	err = ioutil.WriteFile("env.toml", (*buf).Bytes(), 0644)
 
-	// utils.WriteToEnv("node", "another", "test", "env.toml", "output.toml")
+	// utils.WriteToEnv("node", "another", "test", "env.toml", "env.toml")
 
 }
 
