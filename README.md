@@ -18,8 +18,8 @@ This CLI includes commands to run different modules of the Gladius Network. To a
 4. `$ make cli`
 5. Run one or both of these modules: [gladius-control-daemon](https://github.com/gladiusio/gladius-control-daemon) or [gladius-networkd](https://github.com/gladiusio/gladius-networkd)
 6. [Write your environment file](./setup.md)
-7. `cd gladius-cli/build`
-8. `./gladius-cli --help`
+7. `$ gladius-cli/build`
+8. `$ ./gladius-cli --help`
   * This runs the CLI executable and displays all available commands
 9. Use `./gladius-cli [command] --help` for usage and help information for specific commands
 
