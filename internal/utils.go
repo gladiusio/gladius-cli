@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -20,6 +19,7 @@ func SendRequest(client *http.Client, requestType, url string, data interface{})
 	if data != nil {
 		jsonPayload, err := json.Marshal(data)
 		if err != nil {
+			println("JSON ERROR")
 			return "", err
 		}
 		b = *bytes.NewBuffer(jsonPayload)
@@ -28,21 +28,25 @@ func SendRequest(client *http.Client, requestType, url string, data interface{})
 	// Build the request
 	req, err := http.NewRequest(requestType, url, &b)
 	if err != nil {
+		println("BUILD REQUEST ERROR")
 		return "", err
 	}
 
 	req.Header.Set("User-Agent", "gladius-cli")
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Authorization", "password")
 
 	// Send the request via a client
 	res, err := client.Do(req)
 	if err != nil {
+		println("SEND REQUEST ERROR")
 		return "", err
 	}
 
 	// read the body of the response
 	body, readErr := ioutil.ReadAll(res.Body)
 	if readErr != nil {
+		println("READ BODY ERROR")
 		return "", err
 	}
 
@@ -103,28 +107,4 @@ func WriteToEnv(section, key, value, source, destination string) error {
 	}
 
 	return nil
-}
-
-// handle the control daemon responses
-func ControlDaemonHandler(_res []byte) (interface{}, error) {
-	type apiResponse struct {
-		Message  string      `json:"message"`
-		Success  bool        `json:"success"`
-		Error    string      `json:"error"`
-		Response interface{} `json:"response"`
-		Endpoint string      `json:"endpoint"`
-	}
-
-	var response = apiResponse{}
-
-	err := json.Unmarshal(_res, &response)
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-
-	if !response.Success {
-		return nil, errors.New(response.Message)
-	}
-
-	return response, nil
 }

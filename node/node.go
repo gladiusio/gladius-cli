@@ -24,6 +24,15 @@ type Node struct {
 	} `json:"data"`
 }
 
+// ApiResponse - standard response from the control daemon api
+type ApiResponse struct {
+	Message  string      `json:"message"`
+	Success  bool        `json:"success"`
+	Error    string      `json:"error"`
+	Response interface{} `json:"response"`
+	Endpoint string      `json:"endpoint"`
+}
+
 // For control over HTTP client headers,
 // redirect policy, and other settings,
 // create an HTTP client
@@ -43,24 +52,24 @@ func Test(myNode Node) {
 	}
 }
 
-// PostSettings - posts user settings to the api
-func PostSettings(filename string) bool {
-	url := "http://localhost:3000/api/settings/start"
+// PostSettings - posts user settings to the api [Deprecated in CDv2]
+// func PostSettings(filename string) bool {
+// 	url := "http://localhost:3000/api/settings/start"
+//
+// 	envFile, err := utils.GetEnvMap("env.toml")
+//
+// 	envData := envFile["environment"] // only use what's in the environment section
+//
+// 	_, err = utils.SendRequest(client, "POST", url, envData)
+// 	if err != nil {
+// 		log.Fatal("POST-postSettings(): ", err)
+// 		return false
+// 	}
+//
+// 	return true
+// }
 
-	envFile, err := utils.GetEnvMap("env.toml")
-
-	envData := envFile["environment"] // only use what's in the environment section
-
-	_, err = utils.SendRequest(client, "POST", url, envData)
-	if err != nil {
-		log.Fatal("POST-postSettings(): ", err)
-		return false
-	}
-
-	return true
-}
-
-// GetSettings - get settings from API
+// GetSettings - get settings from API [Needs to be implemented in CDv2]
 func GetSettings() {
 	url := "http://localhost:3000/api/settings/"
 
@@ -74,23 +83,24 @@ func GetSettings() {
 
 // CreateNode - create a Node contract
 func CreateNode() (string, error) {
-	url := "http://localhost:3000/api/node/create/"
+	url := "http://localhost:3001/api/node/create"
 
 	res, err := utils.SendRequest(client, "POST", url, nil)
 	if err != nil {
-		log.Fatal("POST-createNode(): ", err)
 		return "", err
 	}
 
-	var data map[string]interface{}
-
-	json.Unmarshal([]byte(res), &data)
-
-	if data["txHash"] == nil {
-		return "", errors.New("ERROR CREATING NODE")
+	api, err := ControlDaemonHandler([]byte(res))
+	if err != nil {
+		return "", err
 	}
 
-	return data["txHash"].(string), nil // tx hash
+	response := api.Response.(map[string]interface{})
+	txHash := response["txHash"].(map[string]interface{})
+
+	fmt.Println("address: ", txHash["value"])
+
+	return txHash["value"].(string), nil //tx hash
 }
 
 // GetNodeAddress - get node address from owner lookup
@@ -106,7 +116,7 @@ func GetNodeAddress() string {
 
 	json.Unmarshal([]byte(res), &data)
 
-	return data["address"].(string) // tx hash
+	return data["address"].(string) // node address
 }
 
 // SetNodeData - set data for a Node contract
@@ -166,27 +176,26 @@ func CheckPoolApplication(nodeAddress, poolAddress string) string {
 }
 
 // CheckTx - check status of tx hash
-func CheckTx(tx string) bool {
-	url := fmt.Sprintf("http://localhost:3000/api/status/tx/%s", tx)
+func CheckTx(tx string) (bool, error) {
+	url := fmt.Sprintf("http://localhost:3001/api/status/tx/%s", tx)
 
 	res, err := utils.SendRequest(client, "GET", url, nil)
 	if err != nil {
-		log.Fatal("POST-postSettings(): ", err)
+		log.Fatal("POST-checkTx(): ", err)
+		return false, err
 	}
 
-	in := res
-
-	var data map[string]map[string]interface{} // wtf golang this is gross
-
-	json.Unmarshal([]byte(in), &data)
-
-	receipt := data["receipt"]
-
-	if len(receipt) == 0 {
-		return false // tx pending
+	api, err := ControlDaemonHandler([]byte(res))
+	if err != nil {
+		return false, err
 	}
 
-	return true // tx complete
+	response := api.Response.(map[string]interface{})
+	txHash := response["txHash"].(map[string]interface{})
+
+	fmt.Println("address: ", txHash["value"])
+
+	return txHash["complete"], nil // tx completion status
 }
 
 // WaitForTx - wait for the tx to complete
@@ -244,4 +253,20 @@ func StatusEdgeNode() string {
 	clientHTTP.Call("GladiusEdge.Status", nil, &reply)
 
 	return reply
+}
+
+// handle the control daemon responses
+func ControlDaemonHandler(_res []byte) (ApiResponse, error) {
+	var response = ApiResponse{}
+
+	err := json.Unmarshal(_res, &response)
+	if err != nil {
+		return ApiResponse{}, err
+	}
+
+	if !response.Success {
+		return ApiResponse{}, errors.New("API ERROR: " + response.Message)
+	}
+
+	return response, nil
 }

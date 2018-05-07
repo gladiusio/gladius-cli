@@ -2,9 +2,7 @@ package commands
 
 import (
 	"fmt"
-	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gladiusio/gladius-cli/internal"
 	"github.com/gladiusio/gladius-cli/node"
@@ -58,6 +56,7 @@ var cmdTest = &cobra.Command{
 
 // collect user info, create node, set node data
 func createNewNode(cmd *cobra.Command, args []string) {
+	// create the user questions
 	var qs = []*survey.Question{
 		{
 			Name:      "name",
@@ -213,16 +212,7 @@ func echoRun(cmd *cobra.Command, args []string) {
 }
 
 func test(cmd *cobra.Command, args []string) {
-	var client = &http.Client{
-		Timeout: time.Second * 10, //10 second timeout
-	}
-
-	res, err := utils.SendRequest(client, "GET", "http://localhost:3001/api/node/", nil)
-	fmt.Println(err)
-	fmt.Println(res)
-
-	utils.ControlDaemonHandler([]byte(res))
-	fmt.Println(res)
+	node.CreateNode()
 }
 
 func init() {
