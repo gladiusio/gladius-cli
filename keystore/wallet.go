@@ -42,8 +42,6 @@ func GetAccounts() error {
 		return fmt.Errorf("%v/keystore.GetAccounts", err)
 	}
 
-	// println(res)
-
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
 		return fmt.Errorf("%v/keystore.GetAccounts", err)

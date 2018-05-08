@@ -67,9 +67,9 @@ func SetNodeData(nodeAddress string, data map[string]interface{}) (string, error
 	}
 
 	response := api.Response.(map[string]interface{})
-	txHash := response["txHash"].(string)
+	txHash := response["txHash"].(map[string]interface{})
 
-	return txHash, nil
+	return txHash["value"].(string), nil //tx hash
 }
 
 // ApplyToPool - apply to a pool [Need to implement new API]

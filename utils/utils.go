@@ -56,7 +56,7 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 	if strings.Compare(requestType, "GET") != 0 {
 		password := ""
 		prompt := &survey.Password{
-			Message: "Please type your password",
+			Message: "Please type your password: ",
 		}
 		survey.AskOne(prompt, &password, nil)
 
@@ -111,9 +111,10 @@ func WaitForTx(tx string) (bool, error) {
 		return false, fmt.Errorf("%v/utils.WaitForTx", err)
 	}
 
-	for status == false {
+	for !status {
 		status, err = CheckTx(tx)
 		if err != nil {
+			time.Sleep(1 * time.Second)
 			return false, fmt.Errorf("%v/utils.WaitForTx", err)
 		}
 		fmt.Printf("Tx: %s\t Status: Pending\r", tx)
