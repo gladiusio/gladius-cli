@@ -1,211 +1,117 @@
 package node
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"log"
-	"net/http"
-	"time"
 
-	"github.com/gladiusio/gladius-cli/internal"
+	"github.com/gladiusio/gladius-cli/utils"
 	"github.com/powerman/rpc-codec/jsonrpc2"
 )
 
-// Node - properties of a node
-type Node struct {
-	Type    string `json:"type"`
-	Address string `json:"address"`
-	Data    struct {
-		Name      string `json:"name"`
-		Email     string `json:"email"`
-		IPAddress string `json:"ipAddress"`
-		Status    string `json:"status"`
-	} `json:"data"`
-}
-
-// For control over HTTP client headers,
-// redirect policy, and other settings,
-// create an HTTP client
-var client = &http.Client{
-	Timeout: time.Second * 10, //10 second timeout
-}
-
-// Test ...
-func Test(myNode Node) {
-	test := myNode.Data
-	fmt.Println((test))
-
-	_, err := json.Marshal(test)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-}
-
-// PostSettings - posts user settings to the api
-func PostSettings(filename string) bool {
-	url := "http://localhost:3000/api/settings/start"
-
-	envFile, err := utils.GetEnvMap("env.toml")
-
-	envData := envFile["environment"] // only use what's in the environment section
-
-	_, err = utils.SendRequest(client, "POST", url, envData)
-	if err != nil {
-		log.Fatal("POST-postSettings(): ", err)
-		return false
-	}
-
-	return true
-}
-
-// GetSettings - get settings from API
-func GetSettings() {
-	url := "http://localhost:3000/api/settings/"
-
-	res, err := utils.SendRequest(client, "GET", url, nil)
-	if err != nil {
-		log.Fatal("GET-getSettings(): ", err)
-	}
-
-	fmt.Println(res)
+// Test - random test function
+func Test() {
 }
 
 // CreateNode - create a Node contract
 func CreateNode() (string, error) {
-	url := "http://localhost:3000/api/node/create/"
+	url := "http://localhost:3001/api/node/create"
 
-	res, err := utils.SendRequest(client, "POST", url, nil)
+	res, err := utils.SendRequest("POST", url, nil)
 	if err != nil {
-		log.Fatal("POST-createNode(): ", err)
-		return "", err
+		return "", fmt.Errorf("%v/node.CreateNode", err)
 	}
 
-	var data map[string]interface{}
-
-	json.Unmarshal([]byte(res), &data)
-
-	if data["txHash"] == nil {
-		return "", errors.New("ERROR CREATING NODE")
+	api, err := utils.ControlDaemonHandler([]byte(res))
+	if err != nil {
+		return "", fmt.Errorf("%v/node.CreateNode", err)
 	}
 
-	return data["txHash"].(string), nil // tx hash
+	response := api.Response.(map[string]interface{})
+	txHash := response["txHash"].(map[string]interface{})
+
+	return txHash["value"].(string), nil //tx hash
 }
 
 // GetNodeAddress - get node address from owner lookup
-func GetNodeAddress() string {
-	url := "http://localhost:3000/api/node"
+func GetNodeAddress() (string, error) {
+	url := "http://localhost:3001/api/node/"
 
-	res, err := utils.SendRequest(client, "GET", url, nil)
+	res, err := utils.SendRequest("GET", url, nil)
 	if err != nil {
-		log.Fatal("GET-getNodeAddress(): ", err)
+		return "", fmt.Errorf("%v/node.GetNodeAddress", err)
 	}
 
-	var data map[string]interface{}
+	api, err := utils.ControlDaemonHandler([]byte(res))
+	if err != nil {
+		return "", fmt.Errorf("%v/node.GetNodeAddress", err)
+	}
 
-	json.Unmarshal([]byte(res), &data)
+	address := api.Response.(string)
 
-	return data["address"].(string) // tx hash
+	return address, nil //node address
 }
 
 // SetNodeData - set data for a Node contract
-func SetNodeData(nodeAddress string, myNode Node) (string, error) {
-	url := fmt.Sprintf("http://localhost:3000/api/node/%s/data", nodeAddress)
+func SetNodeData(nodeAddress string, data map[string]interface{}) (string, error) {
+	url := fmt.Sprintf("http://localhost:3001/api/node/%s/data", nodeAddress)
 
-	res, err := utils.SendRequest(client, "POST", url, myNode.Data)
+	res, err := utils.SendRequest("POST", url, data)
 	if err != nil {
-		log.Fatal("POST-setNodeData(): ", err)
+		return "", fmt.Errorf("%v/node.SetNodeData", err)
 	}
 
-	var data map[string]interface{}
-
-	json.Unmarshal([]byte(res), &data)
-
-	if data["txHash"] == nil {
-		return "", errors.New("ERROR CREATING NODE")
+	api, err := utils.ControlDaemonHandler([]byte(res))
+	if err != nil {
+		return "", fmt.Errorf("%v/node.SetNodeData", err)
 	}
 
-	return data["txHash"].(string), nil // tx hash
+	response := api.Response.(map[string]interface{})
+	txHash := response["txHash"].(map[string]interface{})
+
+	return txHash["value"].(string), nil //tx hash
 }
 
-// ApplyToPool - apply to a pool
+// ApplyToPool - apply to a pool [Need to implement new API]
 func ApplyToPool(nodeAddress, poolAddress string) (string, error) {
-	url := fmt.Sprintf("http://localhost:3000/api/node/%s/apply/%s", nodeAddress, poolAddress)
+	url := fmt.Sprintf("http://localhost:3001/api/node/%s/apply/%s", nodeAddress, poolAddress)
 
-	res, err := utils.SendRequest(client, "POST", url, nil)
+	res, err := utils.SendRequest("POST", url, nil)
 	if err != nil {
-		log.Fatal("POST-postSettings(): ", err)
+		return "", fmt.Errorf("%v/node.ApplyToPool", err)
 	}
 
-	var data map[string]interface{}
-
-	json.Unmarshal([]byte(res), &data)
-
-	if data["tx"] == nil {
-		return "", errors.New("ERROR APPLYING TO POOL: " + res)
-	}
-
-	return data["tx"].(string), nil // tx hash
-}
-
-// CheckPoolApplication - check the status of your pool application
-func CheckPoolApplication(nodeAddress, poolAddress string) string {
-	url := fmt.Sprintf("http://localhost:3000/api/node/%s/status/%s", nodeAddress, poolAddress)
-
-	res, err := utils.SendRequest(client, "GET", url, nil)
+	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		log.Fatal("GET-getPoolStatus(): ", err)
+		return "", fmt.Errorf("%v/node.CreateNode", err)
 	}
 
-	var data map[string]interface{}
+	response := api.Response.(map[string]interface{})
+	txHash := response["txHash"].(map[string]interface{})
 
-	json.Unmarshal([]byte(res), &data)
-
-	return data["status"].(string) // application status
+	return txHash["value"].(string), nil //tx hash
 }
 
-// CheckTx - check status of tx hash
-func CheckTx(tx string) bool {
-	url := fmt.Sprintf("http://localhost:3000/api/status/tx/%s", tx)
+// CheckPoolApplication - check the status of your pool application [Need to implement new API]
+func CheckPoolApplication(nodeAddress, poolAddress string) (string, error) {
+	url := fmt.Sprintf("http://localhost:3001/api/node/%s/application/%s", nodeAddress, poolAddress)
 
-	res, err := utils.SendRequest(client, "GET", url, nil)
+	res, err := utils.SendRequest("GET", url, nil)
 	if err != nil {
-		log.Fatal("POST-postSettings(): ", err)
+		return "", fmt.Errorf("%v/node.CheckPoolApplication", err)
 	}
 
-	in := res
-
-	var data map[string]map[string]interface{} // wtf golang this is gross
-
-	json.Unmarshal([]byte(in), &data)
-
-	receipt := data["receipt"]
-
-	if len(receipt) == 0 {
-		return false // tx pending
+	api, err := utils.ControlDaemonHandler([]byte(res))
+	if err != nil {
+		return "", fmt.Errorf("%v/node.CheckPoolApplication", err)
 	}
 
-	return true // tx complete
+	response := api.Response.(map[string]interface{})
+	status := response["status"].(string)
+
+	return status, nil // pool status
 }
-
-// WaitForTx - wait for the tx to complete
-func WaitForTx(tx string) bool {
-	status := CheckTx(tx)
-
-	for status == false {
-		status = CheckTx(tx)
-		fmt.Printf("Tx: %s\t Status: Pending\r", tx)
-	}
-
-	fmt.Printf("\nTx: %s\t Status: Successful\n", tx)
-	return true
-}
-
-// Should add errors for the edge node functions below
 
 // StartEdgeNode - start edge node server
-func StartEdgeNode() string {
+func StartEdgeNode() (string, error) {
 	// Client use HTTP transport.
 	clientHTTP := jsonrpc2.NewHTTPClient("http://localhost:5000/rpc")
 	defer clientHTTP.Close()
@@ -213,13 +119,15 @@ func StartEdgeNode() string {
 	var reply string
 
 	// Synchronous call using positional params and TCP.
-	clientHTTP.Call("GladiusEdge.Start", nil, &reply)
-
-	return reply
+	err := clientHTTP.Call("GladiusEdge.Start", nil, &reply)
+	if err != nil {
+		return "", fmt.Errorf("%v/node.StopEdgeNode", err)
+	}
+	return reply, nil
 }
 
 // StopEdgeNode - stop edge node server
-func StopEdgeNode() string {
+func StopEdgeNode() (string, error) {
 	// Client use HTTP transport.
 	clientHTTP := jsonrpc2.NewHTTPClient("http://localhost:5000/rpc")
 	defer clientHTTP.Close()
@@ -227,13 +135,16 @@ func StopEdgeNode() string {
 	var reply string
 
 	// Synchronous call using positional params and TCP.
-	clientHTTP.Call("GladiusEdge.Stop", nil, &reply)
+	err := clientHTTP.Call("GladiusEdge.Stop", nil, &reply)
+	if err != nil {
+		return "", fmt.Errorf("%v/node.StopEdgeNode", err)
+	}
 
-	return reply
+	return reply, nil
 }
 
 // StatusEdgeNode - status of edge node server
-func StatusEdgeNode() string {
+func StatusEdgeNode() (string, error) {
 	// Client use HTTP transport.
 	clientHTTP := jsonrpc2.NewHTTPClient("http://localhost:5000/rpc")
 	defer clientHTTP.Close()
@@ -241,7 +152,10 @@ func StatusEdgeNode() string {
 	var reply string
 
 	// Synchronous call using positional params and TCP.
-	clientHTTP.Call("GladiusEdge.Status", nil, &reply)
+	err := clientHTTP.Call("GladiusEdge.Status", nil, &reply)
+	if err != nil {
+		return "", fmt.Errorf("%v/node.StatusEdgeNode", err)
+	}
 
-	return reply
+	return reply, nil
 }
