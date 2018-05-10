@@ -8,6 +8,18 @@
   version = "v0.3.0"
 
 [[projects]]
+  name = "github.com/briandowns/spinner"
+  packages = ["."]
+  revision = "48dbb65d7bd5c74ab50d53d04c949f20e3d14944"
+  version = "1.0"
+
+[[projects]]
+  name = "github.com/fatih/color"
+  packages = ["."]
+  revision = "507f6050b8568533fb3f5504de8e5205fa62a114"
+  version = "v1.6.0"
+
+[[projects]]
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
@@ -68,6 +80,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7917ff39165d5abf47aaae16fed76f85e30dde0b22cb0345fc4b15edf6d0a755"
+  inputs-digest = "74666f79e27128352da66901e74ed08fe79d7cc8a643df6ed4e0dc52c3c354b0"
   solver-name = "gps-cdcl"
   solver-version = 1

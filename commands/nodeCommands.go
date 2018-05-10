@@ -2,24 +2,16 @@ package commands
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/gladiusio/gladius-cli/keystore"
 	"github.com/gladiusio/gladius-cli/node"
 	"github.com/gladiusio/gladius-cli/utils"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
+	surveyCore "gopkg.in/AlecAivazis/survey.v1/core"
 )
-
-var cmdEcho = &cobra.Command{
-	Use:   "echo [string to echo]",
-	Short: "Echo anything to the screen",
-	Long: `echo is for echoing anything back.
-    Echo echo’s.
-    `,
-	Run: echoRun,
-}
 
 var cmdCreate = &cobra.Command{
 	Use:   "create",
@@ -223,34 +215,16 @@ func edge(cmd *cobra.Command, args []string) {
 	fmt.Println("Edge Daemon:\t", reply)
 }
 
-func echoRun(cmd *cobra.Command, args []string) {
-	fmt.Println(strings.Join(args, " "))
-}
-
 func test(cmd *cobra.Command, args []string) {
-
-	ticker := time.NewTicker(1 * time.Second)
-	quit := make(chan bool)
-
-	go func() {
-		i := 0
-		for {
-			select {
-			case <-ticker.C:
-				fmt.Println("REQUEST")
-				if i == 4 {
-					quit <- true
-				}
-			}
-			i++
-		}
-	}()
-
-	fmt.Println("Done: ", <-quit)
+	s := spinner.New(spinner.CharSets[26], 100*time.Millisecond) // Build our new spinner
+	fmt.Print("Loading")
+	s.Start()                   // Start the spinner
+	time.Sleep(4 * time.Second) // Run for some time to simulate work
+	s.Stop()
 }
 
 func init() {
-	rootCmd.AddCommand(cmdEcho)
+	surveyCore.QuestionIcon = "[Gladius]"
 	rootCmd.AddCommand(cmdCreate)
 	rootCmd.AddCommand(cmdApply)
 	rootCmd.AddCommand(cmdCheck)
