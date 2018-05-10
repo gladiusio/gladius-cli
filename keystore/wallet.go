@@ -1,20 +1,21 @@
 package keystore
 
 import (
+	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/gladiusio/gladius-cli/utils"
-	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 // CreateWallet - create a new wallet with passphrase
 func CreateWallet() error {
 	url := "http://localhost:3001/api/keystore/wallet/create"
 
-	password := NewPassword()
+	password := utils.NewPassword()
+	pass := make(map[string]string)
+	pass["passphrase"] = password
 
-	res, err := utils.SendRequest("POST", url, fmt.Sprintf(`{"passphrase":"%s"}`, password))
+	res, err := utils.SendRequest("POST", url, pass)
 	if err != nil {
 		return fmt.Errorf("%v/keystore.CreateWallet", err)
 	}
@@ -26,9 +27,9 @@ func CreateWallet() error {
 
 	response := api.Response.(map[string]interface{})
 	address := response["address"].(string)
-	path := response["address"].(string)
+	path := response["path"].(string)
 
-	fmt.Printf("Wallet Address: %s\nWallet Path: %s", address, path)
+	fmt.Printf("Wallet Address: %s\nWallet Path: %s\n", address, path)
 
 	return nil
 }
@@ -50,36 +51,24 @@ func GetAccounts() error {
 	response := api.Response.([]interface{})
 
 	if len(response) < 1 {
-		println("No accounts found. Please create a wallet with: gladius-cli wallet create")
-	} else {
-		println("Accounts: ")
+		return errors.New("No accounts found. Please create a wallet with: gladius-cli wallet create")
 	}
 
-	for index, element := range response {
-		fmt.Printf("[%d] %s\n", index, element.(map[string]interface{})["address"].(string))
-	}
+	// println("Accounts: ")
+
+	// for index, element := range response {
+	// 	fmt.Printf("[%d] %s\n", index, element.(map[string]interface{})["address"].(string))
+	// }
 
 	return nil
 }
 
-// NewPassword - make a new password and confirm
-func NewPassword() string {
-	password1 := ""
-	prompt := &survey.Password{
-		Message: "Create a passphrase for your new wallet: ",
-	}
-	survey.AskOne(prompt, &password1, nil)
-
-	password2 := ""
-	prompt = &survey.Password{
-		Message: "Confirm your passphrase: ",
-	}
-	survey.AskOne(prompt, &password2, nil)
-
-	if strings.Compare(password1, password2) != 0 {
-		fmt.Println("Passwords do not match. Please try again")
-		return NewPassword()
+// EnsureAccount - Make sure they have a wallet
+func EnsureAccount() (bool, error) {
+	err := GetAccounts()
+	if err != nil {
+		return false, err
 	}
 
-	return password1
+	return true, nil
 }

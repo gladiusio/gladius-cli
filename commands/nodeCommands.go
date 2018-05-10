@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gladiusio/gladius-cli/keystore"
 	"github.com/gladiusio/gladius-cli/node"
@@ -57,6 +58,18 @@ var cmdTest = &cobra.Command{
 
 // collect user info, create node, set node data
 func createNewNode(cmd *cobra.Command, args []string) {
+	// make sure they have a wallet, if they dont, make one
+	wallet, err := keystore.EnsureAccount()
+	if !wallet {
+		err = keystore.CreateWallet()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println("Please add test ether to your new wallet from a ropsten faucet")
+		return
+	}
+
 	// create the user questions
 	var qs = []*survey.Question{
 		{
@@ -76,10 +89,13 @@ func createNewNode(cmd *cobra.Command, args []string) {
 	answers := make(map[string]interface{})
 
 	// perform the questions
-	err := survey.Ask(qs, &answers)
+	err = survey.Ask(qs, &answers)
 	if err != nil {
 		return
 	}
+
+	// gen a new pgp key for this contract
+	keystore.CreatePGP(answers)
 
 	// get ip of current machine
 	ip, err := utils.GetIP()
@@ -96,8 +112,6 @@ func createNewNode(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	fmt.Println("")
-
 	// wait for the tx to finish
 	_, err = utils.WaitForTx(tx)
 	if err != nil {
@@ -106,8 +120,8 @@ func createNewNode(cmd *cobra.Command, args []string) {
 	}
 
 	// save the node address
-	nodeAddress, _ := node.GetNodeAddress()
-	if err = utils.WriteToEnv("node", "address", nodeAddress, "env.toml", "env.toml"); err != nil {
+	nodeAddress, err := node.GetNodeAddress()
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -135,11 +149,17 @@ func createNewNode(cmd *cobra.Command, args []string) {
 
 // send data to pool
 func applyToPool(cmd *cobra.Command, args []string) {
-	envFile, err := utils.GetEnvMap("env.toml")
-	envNode := envFile["node"]
-	env := envFile["environment"]
-
-	fmt.Println(env["poolAddress"])
+	// make sure they have a wallet, if they dont, make one
+	wallet, err := keystore.EnsureAccount()
+	if !wallet {
+		err = keystore.CreateWallet()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println("Please add test ether to your new wallet from a ropsten faucet")
+		return
+	}
 
 	// build question
 	poolAddy := ""
@@ -148,7 +168,14 @@ func applyToPool(cmd *cobra.Command, args []string) {
 	}
 	survey.AskOne(prompt, &poolAddy, nil)
 
-	tx, err := node.ApplyToPool(envNode["address"], poolAddy)
+	// save the node address
+	nodeAddress, err := node.GetNodeAddress()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	tx, err := node.ApplyToPool(nodeAddress, poolAddy)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -160,17 +187,6 @@ func applyToPool(cmd *cobra.Command, args []string) {
 
 // check the application of the node
 func checkPoolApp(cmd *cobra.Command, args []string) {
-	envFile, err := utils.GetEnvMap("env.toml")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	envNode := envFile["node"]
-	env := envFile["environment"]
-
-	fmt.Println(env["poolAddress"])
-
 	// build the prompt
 	poolAddy := ""
 	prompt := &survey.Input{
@@ -178,7 +194,14 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 	}
 	survey.AskOne(prompt, &poolAddy, nil)
 
-	status, _ := node.CheckPoolApplication(envNode["address"], poolAddy)
+	// save the node address
+	nodeAddress, err := node.GetNodeAddress()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	status, _ := node.CheckPoolApplication(nodeAddress, poolAddy)
 	fmt.Println("Pool: " + poolAddy + "\t Status: " + status)
 }
 
@@ -205,15 +228,28 @@ func echoRun(cmd *cobra.Command, args []string) {
 }
 
 func test(cmd *cobra.Command, args []string) {
-	err := keystore.GetAccounts()
-	if err != nil {
-		fmt.Println(err)
-	}
+
+	ticker := time.NewTicker(1 * time.Second)
+	quit := make(chan bool)
+
+	go func() {
+		i := 0
+		for {
+			select {
+			case <-ticker.C:
+				fmt.Println("REQUEST")
+				if i == 4 {
+					quit <- true
+				}
+			}
+			i++
+		}
+	}()
+
+	fmt.Println("Done: ", <-quit)
 }
 
 func init() {
-	// node.PostSettings("env.toml")
-
 	rootCmd.AddCommand(cmdEcho)
 	rootCmd.AddCommand(cmdCreate)
 	rootCmd.AddCommand(cmdApply)

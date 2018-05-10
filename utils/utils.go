@@ -29,6 +29,8 @@ var client = &http.Client{
 	Timeout: time.Second * 10, //10 second timeout
 }
 
+var cachedPassword string
+
 // SendRequest - custom function to make sending request less of a pain in the arse
 func SendRequest(requestType, url string, data interface{}) (string, error) {
 
@@ -52,15 +54,16 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 	req.Header.Set("User-Agent", "gladius-cli")
 	req.Header.Set("Content-Type", "application/json")
 
-	// add the X-Auth header and pass in a user password if requestType is anything but GET
+	// if you're writing then ask for password
 	if strings.Compare(requestType, "GET") != 0 {
-		password := ""
-		prompt := &survey.Password{
-			Message: "Please type your password: ",
+		// if the password is cached then use it
+		if strings.Compare(cachedPassword, "") != 0 {
+			req.Header.Set("X-Authorization", cachedPassword)
+		} else { //else ask
+			password := AskPassword()
+			cachedPassword = password
+			req.Header.Set("X-Authorization", password)
 		}
-		survey.AskOne(prompt, &password, nil)
-
-		req.Header.Set("X-Authorization", password)
 	}
 
 	// Send the request via a client
@@ -106,22 +109,38 @@ func CheckTx(tx string) (bool, error) {
 
 // WaitForTx - wait for the tx to complete
 func WaitForTx(tx string) (bool, error) {
-	status, err := CheckTx(tx)
+	ticker := time.NewTicker(1 * time.Second)
+	quit := make(chan error) // this is the exit condition channel
+
+	println()
+
+	// hit the status API every 1 second
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				status, err := CheckTx(tx)
+				if err != nil {
+					quit <- err // if there's an error here then pump it into the channel
+				}
+				if status {
+					quit <- nil // if the tx went through, pump a nil error into the channel
+				} else {
+					fmt.Printf("Tx: %s\t Status: Pending\r", tx)
+				}
+			}
+		}
+	}()
+
+	err := <-quit
+
 	if err != nil {
 		return false, fmt.Errorf("%v/utils.WaitForTx", err)
+	} else {
+		fmt.Printf("\nTx: %s\t Status: Successful\n", tx)
+		return true, nil
 	}
 
-	for !status {
-		status, err = CheckTx(tx)
-		if err != nil {
-			time.Sleep(1 * time.Second)
-			return false, fmt.Errorf("%v/utils.WaitForTx", err)
-		}
-		fmt.Printf("Tx: %s\t Status: Pending\r", tx)
-	}
-
-	fmt.Printf("\nTx: %s\t Status: Successful\n", tx)
-	return true, nil
 }
 
 // ControlDaemonHandler - handler for the API responses
@@ -149,6 +168,38 @@ func GetIP() (string, error) {
 	return res, nil
 }
 
+// NewPassword - make a new password and confirm
+func NewPassword() string {
+	password1 := ""
+	prompt := &survey.Password{
+		Message: "Create a passphrase for your new wallet: ",
+	}
+	survey.AskOne(prompt, &password1, nil)
+
+	password2 := ""
+	prompt = &survey.Password{
+		Message: "Confirm your passphrase: ",
+	}
+	survey.AskOne(prompt, &password2, nil)
+
+	if strings.Compare(password1, password2) != 0 {
+		fmt.Println("Passwords do not match. Please try again")
+		return NewPassword()
+	}
+
+	return password1
+}
+
+// AskPassword - ask for users password
+func AskPassword() string {
+	password := ""
+	prompt := &survey.Password{
+		Message: "Please type your password: ",
+	}
+	survey.AskOne(prompt, &password, nil)
+	return password
+}
+
 // ############ DEPRECATED ############
 
 // custom function to return a mapping of the environment file (has to be .toml)
@@ -163,6 +214,7 @@ func GetEnvMap(filename string) (map[string]map[string]string, error) {
 
 	// decode the file and put it into envFile
 	var envFile = make(map[string]map[string]string)
+
 	if _, err := toml.Decode(string(b), &envFile); err != nil {
 		fmt.Println("Error decoding")
 		return nil, err

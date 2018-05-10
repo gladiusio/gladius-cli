@@ -1,8 +1,6 @@
 package node
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 
 	"github.com/gladiusio/gladius-cli/utils"
@@ -74,38 +72,42 @@ func SetNodeData(nodeAddress string, data map[string]interface{}) (string, error
 
 // ApplyToPool - apply to a pool [Need to implement new API]
 func ApplyToPool(nodeAddress, poolAddress string) (string, error) {
-	url := fmt.Sprintf("http://localhost:3000/api/node/%s/apply/%s", nodeAddress, poolAddress)
+	url := fmt.Sprintf("http://localhost:3001/api/node/%s/apply/%s", nodeAddress, poolAddress)
 
 	res, err := utils.SendRequest("POST", url, nil)
 	if err != nil {
 		return "", fmt.Errorf("%v/node.ApplyToPool", err)
 	}
 
-	var data map[string]interface{}
-
-	json.Unmarshal([]byte(res), &data)
-
-	if data["tx"] == nil {
-		return "", errors.New("ERROR APPLYING TO POOL: " + res)
+	api, err := utils.ControlDaemonHandler([]byte(res))
+	if err != nil {
+		return "", fmt.Errorf("%v/node.CreateNode", err)
 	}
 
-	return data["tx"].(string), nil // tx hash
+	response := api.Response.(map[string]interface{})
+	txHash := response["txHash"].(map[string]interface{})
+
+	return txHash["value"].(string), nil //tx hash
 }
 
 // CheckPoolApplication - check the status of your pool application [Need to implement new API]
 func CheckPoolApplication(nodeAddress, poolAddress string) (string, error) {
-	url := fmt.Sprintf("http://localhost:3000/api/node/%s/status/%s", nodeAddress, poolAddress)
+	url := fmt.Sprintf("http://localhost:3001/api/node/%s/application/%s", nodeAddress, poolAddress)
 
 	res, err := utils.SendRequest("GET", url, nil)
 	if err != nil {
 		return "", fmt.Errorf("%v/node.CheckPoolApplication", err)
 	}
 
-	var data map[string]interface{}
+	api, err := utils.ControlDaemonHandler([]byte(res))
+	if err != nil {
+		return "", fmt.Errorf("%v/node.CheckPoolApplication", err)
+	}
 
-	json.Unmarshal([]byte(res), &data)
+	response := api.Response.(map[string]interface{})
+	status := response["status"].(string)
 
-	return data["status"].(string), nil // application status
+	return status, nil // pool status
 }
 
 // StartEdgeNode - start edge node server
