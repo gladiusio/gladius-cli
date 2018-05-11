@@ -15,6 +15,7 @@ func Test() {
 func CreateNode() (string, error) {
 	url := "http://localhost:3001/api/node/create"
 
+	// use the custom sendRequest to send something to the control daemon api
 	res, err := utils.SendRequest("POST", url, nil)
 	if err != nil {
 		return "", fmt.Errorf("%v/node.CreateNode", err)
@@ -106,7 +107,6 @@ func CheckPoolApplication(nodeAddress, poolAddress string) (string, error) {
 
 	response := api.Response.(map[string]interface{})
 	status := response["status"].(string)
-
 	return status, nil // pool status
 }
 
@@ -144,18 +144,18 @@ func StopEdgeNode() (string, error) {
 }
 
 // StatusEdgeNode - status of edge node server
-func StatusEdgeNode() (string, error) {
-	// Client use HTTP transport.
-	clientHTTP := jsonrpc2.NewHTTPClient("http://localhost:5000/rpc")
-	defer clientHTTP.Close()
-
-	var reply string
-
-	// Synchronous call using positional params and TCP.
-	err := clientHTTP.Call("GladiusEdge.Status", nil, &reply)
-	if err != nil {
-		return "", fmt.Errorf("%v/node.StatusEdgeNode", err)
-	}
-
-	return reply, nil
-}
+// func StatusEdgeNode() (string, error) {
+// 	// Client use HTTP transport.
+// 	clientHTTP := jsonrpc2.NewHTTPClient("http://localhost:5000/rpc")
+// 	defer clientHTTP.Close()
+//
+// 	var reply string
+//
+// 	// Synchronous call using positional params and TCP.
+// 	err := clientHTTP.Call("GladiusEdge.Status", nil, &reply)
+// 	if err != nil {
+// 		return "", fmt.Errorf("%v/node.StatusEdgeNode", err)
+// 	}
+//
+// 	return reply, nil
+// }

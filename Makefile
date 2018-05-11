@@ -33,7 +33,7 @@ GOTEST=go test
 ##
 
 # general make targets
-all: cli
+all: dependencies cli
 
 clean:
 	rm -rf ./build/*
@@ -41,7 +41,7 @@ clean:
 
 # dependency management
 dependencies:
-	# install go packages
+	# installing dependencies
 	dep ensure
 
 # build steps
@@ -49,4 +49,5 @@ test: $(CLI_SRC)
 	$(GOTEST) $(CLI_SRC)
 
 cli: test
+	# compiling binary
 	$(GOBUILD) -o $(CLI_DEST) $(CLI_SRC)

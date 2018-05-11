@@ -11,6 +11,7 @@ import (
 func CreateWallet() error {
 	url := "http://localhost:3001/api/keystore/wallet/create"
 
+	// make a new passphrase for this wallet
 	password := utils.NewPassword()
 	pass := make(map[string]string)
 	pass["passphrase"] = password
@@ -53,12 +54,6 @@ func GetAccounts() error {
 	if len(response) < 1 {
 		return errors.New("No accounts found. Please create a wallet with: gladius-cli wallet create")
 	}
-
-	// println("Accounts: ")
-
-	// for index, element := range response {
-	// 	fmt.Printf("[%d] %s\n", index, element.(map[string]interface{})["address"].(string))
-	// }
 
 	return nil
 }

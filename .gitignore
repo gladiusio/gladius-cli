@@ -19,6 +19,4 @@ build/
 # goland ide
 .idea/
 
-# env
-env.toml
-output.toml
+.DS_Store

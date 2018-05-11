@@ -116,6 +116,7 @@ func WaitForTx(tx string) (bool, error) {
 
 	// hit the status API every 1 second
 	go func() {
+		count := 0
 		for {
 			select {
 			case <-ticker.C:
@@ -125,9 +126,20 @@ func WaitForTx(tx string) (bool, error) {
 				}
 				if status {
 					quit <- nil // if the tx went through, pump a nil error into the channel
-				} else {
-					fmt.Printf("Tx: %s\t Status: Pending\r", tx)
 				}
+				switch count {
+				case 0:
+					fmt.Printf("Tx: %s\t Status: Pending   \r", tx)
+				case 1:
+					fmt.Printf("Tx: %s\t Status: Pending.  \r", tx)
+				case 2:
+					fmt.Printf("Tx: %s\t Status: Pending.. \r", tx)
+				case 3:
+					fmt.Printf("Tx: %s\t Status: Pending...\r", tx)
+				default:
+					count = -1
+				}
+				count++
 			}
 		}
 	}()
@@ -140,7 +152,6 @@ func WaitForTx(tx string) (bool, error) {
 		fmt.Printf("\nTx: %s\t Status: Successful\n", tx)
 		return true, nil
 	}
-
 }
 
 // ControlDaemonHandler - handler for the API responses

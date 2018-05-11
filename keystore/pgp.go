@@ -6,6 +6,7 @@ import (
 	"github.com/gladiusio/gladius-cli/utils"
 )
 
+// CreatePGP - create a new pgp key and return path
 func CreatePGP(data interface{}) (string, error) {
 	url := "http://localhost:3001/api/keystore/pgp/create"
 
