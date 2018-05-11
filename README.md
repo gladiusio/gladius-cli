@@ -22,20 +22,22 @@ This CLI includes commands to run different modules of the Gladius Network. To a
 
 *use the base command* `./build/gladius` *to see usage example*
 
-Terminal Window 1:
+**Terminal Window 1:**
 ```
 my-computer: ~
+
 > gladius-control
 Running at http://localhost:3001
 ```
 
-Terminal Window 2:
+**Terminal Window 2:**
 ```
 my-computer: ~/go/src/github.com/gladiusio/gladius-cli
 > cd build
 
 my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
 > ./gladius-cli --help
+
 Gladius CLI. This can be used to interact with various components of the Gladius Network.
 
 Usage:
@@ -58,6 +60,7 @@ Use "gladius [command] --help" for more information about a command.
 
 my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
 > ./gladius create
+
 ? What is your name? Marcelo
 ? What is your email? test@email.com
 ? Enter your password: **********
@@ -65,6 +68,7 @@ my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
 Tx: 0x12aaa4517e8c0899791de40403d7c0a9a5b44f904e0bfe19c2207d9e338ba68e	 Status: Pending
 Tx: 0x12aaa4517e8c0899791de40403d7c0a9a5b44f904e0bfe19c2207d9e338ba68e	 Status: Successful
 Node created!
+
 Tx: 0x3e39c6892195cde9dda7944f47030387d752087955f599cb3c2d538204bffd8e	 Status: Pending
 Tx: 0x3e39c6892195cde9dda7944f47030387d752087955f599cb3c2d538204bffd8e	 Status: Successful
 Node data set!
