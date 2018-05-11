@@ -1,27 +1,18 @@
 package commands
 
 import (
-	"bytes"
+	"errors"
 	"fmt"
-	"io/ioutil"
-	"log"
-	"strings"
+	"regexp"
 
-	"github.com/BurntSushi/toml"
-	"github.com/gladiusio/gladius-cli/internal"
+	"github.com/gladiusio/gladius-cli/keystore"
 	"github.com/gladiusio/gladius-cli/node"
+	"github.com/gladiusio/gladius-cli/utils"
+	"github.com/mgutz/ansi"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
+	surveyCore "gopkg.in/AlecAivazis/survey.v1/core"
 )
-
-var cmdEcho = &cobra.Command{
-	Use:   "echo [string to echo]",
-	Short: "Echo anything to the screen",
-	Long: `echo is for echoing anything back.
-    Echo echo’s.
-    `,
-	Run: echoRun,
-}
 
 var cmdCreate = &cobra.Command{
 	Use:   "create",
@@ -45,7 +36,7 @@ var cmdCheck = &cobra.Command{
 }
 
 var cmdEdge = &cobra.Command{
-	Use:   "edge [start|stop|status]",
+	Use:   "edge [start|stop]",
 	Short: "Start the edge daemon",
 	Long:  "Start the edge daemon networking server",
 	Run:   edge,
@@ -60,6 +51,19 @@ var cmdTest = &cobra.Command{
 
 // collect user info, create node, set node data
 func createNewNode(cmd *cobra.Command, args []string) {
+	// make sure they have a wallet, if they dont, make one
+	wallet, err := keystore.EnsureAccount()
+	if !wallet {
+		err = keystore.CreateWallet()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println("Please add test ether to your new wallet from a ropsten faucet")
+		return
+	}
+
+	// create the user questions
 	var qs = []*survey.Question{
 		{
 			Name:      "name",
@@ -68,51 +72,40 @@ func createNewNode(cmd *cobra.Command, args []string) {
 			Transform: survey.Title,
 		},
 		{
-			Name:     "email",
-			Prompt:   &survey.Input{Message: "What is your email?"},
-			Validate: survey.Required,
+			Name:   "email",
+			Prompt: &survey.Input{Message: "What is your email?"},
+			Validate: func(val interface{}) error {
+				re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+				if val.(string) == "" {
+					return errors.New("This is a required field")
+				} else if !re.MatchString(val.(string)) {
+					return errors.New("Please enter a valid email address")
+				} else {
+					return nil
+				}
+			},
 		},
 	}
 
 	// the answers will be written to this struct
-	answers := node.Node{}
+	answers := make(map[string]interface{})
 
 	// perform the questions
-	err := survey.Ask(qs, &answers.Data)
+	err = survey.Ask(qs, &answers)
 	if err != nil {
-		fmt.Println(err.Error())
 		return
 	}
 
-	// need to collect ip
-	answers.Data.IPAddress = "1.1.1.1"
-	answers.Data.Status = "active"
+	// gen a new pgp key for this contract
+	keystore.CreatePGP(answers)
 
-	// save the struct to a file (im gonna turn these into go routines and hopefully find a good way to condense these lines)
-	if err = utils.WriteToEnv("node", "type", "node", "env.toml", "env.toml"); err != nil {
-		fmt.Println(err)
+	// get ip of current machine
+	ip, err := utils.GetIP()
+	if err != nil {
 		return
 	}
-	if err = utils.WriteToEnv("node", "status", answers.Data.Status, "env.toml", "env.toml"); err != nil {
-		fmt.Println(err)
-		return
-	}
-	if err = utils.WriteToEnv("node", "name", answers.Data.Name, "env.toml", "env.toml"); err != nil {
-		fmt.Println(err)
-		return
-	}
-	if err = utils.WriteToEnv("node", "email", answers.Data.Email, "env.toml", "env.toml"); err != nil {
-		fmt.Println(err)
-		return
-	}
-	if err = utils.WriteToEnv("node", "ipAddress", answers.Data.IPAddress, "env.toml", "env.toml"); err != nil {
-		fmt.Println(err)
-		return
-	}
-	if err = utils.WriteToEnv("node", "status", answers.Data.Status, "env.toml", "env.toml"); err != nil {
-		fmt.Println(err)
-		return
-	}
+	answers["ip"] = ip
+	answers["status"] = "active"
 
 	// create the node
 	tx, err := node.CreateNode()
@@ -120,16 +113,22 @@ func createNewNode(cmd *cobra.Command, args []string) {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println("")
-	node.WaitForTx(tx)
 
-	// save the node address
-	nodeAddress := node.GetNodeAddress()
-	if err = utils.WriteToEnv("node", "address", nodeAddress, "env.toml", "env.toml"); err != nil {
+	// wait for the node tx to finish
+	_, err = utils.WaitForTx(tx)
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println("Node created!")
+
+	// save the node address
+	nodeAddress, err := node.GetNodeAddress()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println(ansi.Color("Node created!", "83+hb"))
 
 	// set node data
 	tx, err = node.SetNodeData(nodeAddress, answers)
@@ -138,19 +137,34 @@ func createNewNode(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	node.WaitForTx(tx)
-	fmt.Println("Node data set!")
+	// wait for data tx to finish
+	_, err = utils.WaitForTx(tx)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-	fmt.Println("\n" + nodeAddress)
+	fmt.Println(ansi.Color("Node data set!", "83+hb"))
+
+	fmt.Print(ansi.Color("\nNode Address: ", "83+hb"))
+	fmt.Print(ansi.Color(nodeAddress+"\n", "255+hb"))
+
+	fmt.Println("\nUse", ansi.Color("gladius apply", "83+hb"), "to apply to a pool")
 }
 
 // send data to pool
 func applyToPool(cmd *cobra.Command, args []string) {
-	envFile, err := utils.GetEnvMap("env.toml")
-	envNode := envFile["node"]
-	env := envFile["environment"]
-
-	fmt.Println(env["poolAddress"])
+	// make sure they have a wallet, if they dont, make one
+	wallet, err := keystore.EnsureAccount()
+	if !wallet {
+		err = keystore.CreateWallet()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println("Please add test ether to your new wallet from a ropsten faucet")
+		return
+	}
 
 	// build question
 	poolAddy := ""
@@ -159,29 +173,33 @@ func applyToPool(cmd *cobra.Command, args []string) {
 	}
 	survey.AskOne(prompt, &poolAddy, nil)
 
-	tx, err := node.ApplyToPool(envNode["address"], poolAddy)
+	// save the node address
+	nodeAddress, err := node.GetNodeAddress()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	node.WaitForTx(tx)
-	fmt.Println("Application sent to pool!")
+	// send data to the pool
+	tx, err := node.ApplyToPool(nodeAddress, poolAddy)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// wait for the tx to finish
+	_, err = utils.WaitForTx(tx)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println("\nApplication sent to pool!")
+	fmt.Println("\nUse", ansi.Color("gladius check", "83+hb"), "to check the status of your application")
 }
 
 // check the application of the node
 func checkPoolApp(cmd *cobra.Command, args []string) {
-	envFile, err := utils.GetEnvMap("env.toml")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	envNode := envFile["node"]
-	env := envFile["environment"]
-
-	fmt.Println(env["poolAddress"])
-
 	// build the prompt
 	poolAddy := ""
 	prompt := &survey.Input{
@@ -189,61 +207,47 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 	}
 	survey.AskOne(prompt, &poolAddy, nil)
 
-	status := node.CheckPoolApplication(envNode["address"], poolAddy)
+	// save the node address
+	nodeAddress, err := node.GetNodeAddress()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	// check application status
+	status, _ := node.CheckPoolApplication(nodeAddress, poolAddy)
 	fmt.Println("Pool: " + poolAddy + "\t Status: " + status)
+	fmt.Println("\nUse", ansi.Color("gladius edge start", "83+hb"), "to start the edge node software")
 }
 
-// start - stop - status of the edge daemon
+// start or stop the edge daemon
 func edge(cmd *cobra.Command, args []string) {
 
 	var reply string
+
 	switch args[0] {
 	case "start":
-		reply = node.StartEdgeNode()
+		reply, _ = node.StartEdgeNode()
+		fmt.Println("Edge Daemon:\t", reply)
+		fmt.Println("\nUse", ansi.Color("gladius edge stop", "83+hb"), "to stop the edge node software")
 	case "stop":
-		reply = node.StopEdgeNode()
-	case "status":
-		reply = node.StatusEdgeNode()
+		reply, _ = node.StopEdgeNode()
+		fmt.Println("Edge Daemon:\t", reply)
+		fmt.Println("\nUse", ansi.Color("gladius edge start", "83+hb"), "to start the edge node software")
+	// case "status":
+	// 	reply, _ = node.StatusEdgeNode()
 	default:
 		reply = "command not recognized"
+		fmt.Println("Edge Daemon:\t", reply)
+		fmt.Println("\nUse", ansi.Color("gladius edge -h", "83+hb"), "for help")
 	}
-	fmt.Println("Edge Daemon:\t", reply)
-}
-
-func echoRun(cmd *cobra.Command, args []string) {
-	fmt.Println(strings.Join(args, " "))
 }
 
 func test(cmd *cobra.Command, args []string) {
-	b, err := ioutil.ReadFile("env.toml") // read env file
-	if err != nil {
-		fmt.Println("Error reading: " + "env.toml")
-	}
-
-	var envFile = make(map[string]map[string]string)
-
-	if _, err := toml.Decode(string(b), &envFile); err != nil { // turn file into mapping
-		fmt.Println("Error decoding")
-	}
-
-	envFile["node"]["hello"] = "test"
-
-	buf := new(bytes.Buffer)
-	if err := toml.NewEncoder(buf).Encode(envFile); err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(buf.String())
-	err = ioutil.WriteFile("env.toml", (*buf).Bytes(), 0644)
-
-	// utils.WriteToEnv("node", "another", "test", "env.toml", "env.toml")
-
 }
 
 func init() {
-	node.PostSettings("env.toml")
-
-	rootCmd.AddCommand(cmdEcho)
+	surveyCore.QuestionIcon = "[Gladius]"
 	rootCmd.AddCommand(cmdCreate)
 	rootCmd.AddCommand(cmdApply)
 	rootCmd.AddCommand(cmdCheck)

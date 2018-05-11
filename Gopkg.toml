@@ -41,9 +41,5 @@
   unused-packages = true
 
 [[constraint]]
-  name = "github.com/gladiusio/gladius-utils"
   branch = "master"
-
-[[constraint]]
-  name = "github.com/BurntSushi/toml"
-  version = "0.3.0"
+  name = "github.com/mgutz/ansi"
