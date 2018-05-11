@@ -41,5 +41,5 @@
   unused-packages = true
 
 [[constraint]]
-  name = "github.com/briandowns/spinner"
-  version = "1.0.0"
+  branch = "master"
+  name = "github.com/mgutz/ansi"

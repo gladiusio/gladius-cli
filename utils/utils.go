@@ -152,7 +152,6 @@ func WaitForTx(tx string) (bool, error) {
 		fmt.Printf("\nTx: %s\t Status: Successful\n", tx)
 		return true, nil
 	}
-
 }
 
 // ControlDaemonHandler - handler for the API responses
