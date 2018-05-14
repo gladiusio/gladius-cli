@@ -29,7 +29,7 @@ var client = &http.Client{
 	Timeout: time.Second * 10, //10 second timeout
 }
 
-var cachedPassword string
+var cachedPassphrase string
 
 // SendRequest - custom function to make sending request less of a pain in the arse
 func SendRequest(requestType, url string, data interface{}) (string, error) {
@@ -57,11 +57,11 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 	// if you're writing then ask for password
 	if strings.Compare(requestType, "GET") != 0 {
 		// if the password is cached then use it
-		if strings.Compare(cachedPassword, "") != 0 {
-			req.Header.Set("X-Authorization", cachedPassword)
+		if strings.Compare(cachedPassphrase, "") != 0 {
+			req.Header.Set("X-Authorization", cachedPassphrase)
 		} else { //else ask
-			password := AskPassword()
-			cachedPassword = password
+			password := AskPassphrase()
+			cachedPassphrase = password
 			req.Header.Set("X-Authorization", password)
 		}
 	}
@@ -179,8 +179,8 @@ func GetIP() (string, error) {
 	return res, nil
 }
 
-// NewPassword - make a new password and confirm
-func NewPassword() string {
+// NewPassphrase - make a new password and confirm
+func NewPassphrase() string {
 	password1 := ""
 	prompt := &survey.Password{
 		Message: "Create a passphrase for your new wallet: ",
@@ -195,20 +195,25 @@ func NewPassword() string {
 
 	if strings.Compare(password1, password2) != 0 {
 		fmt.Println("Passwords do not match. Please try again")
-		return NewPassword()
+		return NewPassphrase()
 	}
 
 	return password1
 }
 
-// AskPassword - ask for users password
-func AskPassword() string {
+// AskPassphrase - ask for users password
+func AskPassphrase() string {
 	password := ""
 	prompt := &survey.Password{
-		Message: "Please type your password: ",
+		Message: "Please type your wallet passphrase: ",
 	}
 	survey.AskOne(prompt, &password, nil)
 	return password
+}
+
+// CachePassphrase - cache the passphrase so you don't have to enter it
+func CachePassphrase(passphrase string) {
+	cachedPassphrase = passphrase
 }
 
 // ############ DEPRECATED ############

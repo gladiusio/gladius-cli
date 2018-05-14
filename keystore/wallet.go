@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gladiusio/gladius-cli/utils"
+	"github.com/mgutz/ansi"
 )
 
 // CreateWallet - create a new wallet with passphrase
@@ -12,9 +13,11 @@ func CreateWallet() error {
 	url := "http://localhost:3001/api/keystore/wallet/create"
 
 	// make a new passphrase for this wallet
-	password := utils.NewPassword()
+	password := utils.NewPassphrase()
 	pass := make(map[string]string)
 	pass["passphrase"] = password
+
+	utils.CachePassphrase(password)
 
 	res, err := utils.SendRequest("POST", url, pass)
 	if err != nil {
@@ -30,7 +33,9 @@ func CreateWallet() error {
 	address := response["address"].(string)
 	path := response["path"].(string)
 
-	fmt.Printf("Wallet Address: %s\nWallet Path: %s\n", address, path)
+	fmt.Println()
+	fmt.Println(ansi.Color("Wallet Address:", "83+hb"), ansi.Color(address, "255+hb"))
+	fmt.Println("Wallet Path: ", path)
 
 	return nil
 }
