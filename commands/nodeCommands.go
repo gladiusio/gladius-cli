@@ -59,7 +59,10 @@ func createNewNode(cmd *cobra.Command, args []string) {
 			fmt.Println(err)
 			return
 		}
-		fmt.Println("Please add test ether to your new wallet from a ropsten faucet")
+		fmt.Println()
+		fmt.Println(ansi.Color("Please add test ether to your new wallet from a ropsten faucet", "255+hb"))
+		fmt.Println()
+		fmt.Println(ansi.Color("Run", "255+hb"), ansi.Color("gladius create", "83+hb"), ansi.Color("again after you've acquired your test ether", "255+hb"))
 		return
 	}
 
@@ -75,7 +78,7 @@ func createNewNode(cmd *cobra.Command, args []string) {
 			Name:   "email",
 			Prompt: &survey.Input{Message: "What is your email?"},
 			Validate: func(val interface{}) error {
-				re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+				re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$") // regex for email
 				if val.(string) == "" {
 					return errors.New("This is a required field")
 				} else if !re.MatchString(val.(string)) {
@@ -227,13 +230,21 @@ func edge(cmd *cobra.Command, args []string) {
 
 	switch args[0] {
 	case "start":
-		reply, _ = node.StartEdgeNode()
-		fmt.Println("Edge Daemon:\t", reply)
-		fmt.Println("\nUse", ansi.Color("gladius edge stop", "83+hb"), "to stop the edge node software")
+		reply, err := node.StartEdgeNode()
+		if err != nil {
+			fmt.Println("Error starting the edge node. Make sure it's running!")
+		} else {
+			fmt.Println("Edge Daemon:\t", reply)
+			fmt.Println("\nUse", ansi.Color("gladius edge stop", "83+hb"), "to stop the edge node software")
+		}
 	case "stop":
-		reply, _ = node.StopEdgeNode()
-		fmt.Println("Edge Daemon:\t", reply)
-		fmt.Println("\nUse", ansi.Color("gladius edge start", "83+hb"), "to start the edge node software")
+		reply, err := node.StopEdgeNode()
+		if err != nil {
+			fmt.Println("Error stopping the edge node. Make sure it's running!")
+		} else {
+			fmt.Println("Edge Daemon:\t", reply)
+			fmt.Println("\nUse", ansi.Color("gladius edge start", "83+hb"), "to start the edge node software")
+		}
 	// case "status":
 	// 	reply, _ = node.StatusEdgeNode()
 	default:
@@ -244,6 +255,9 @@ func edge(cmd *cobra.Command, args []string) {
 }
 
 func test(cmd *cobra.Command, args []string) {
+	address := "0x1234567890123456789012345678901234567890"
+	// path := "/Users/name/.config/gladius/wallet/UTC-2018-04-14-12533634-DSFX-2234DAXF-3FSDFWEGWES.json"
+	fmt.Println(ansi.Color("Wallet Address:", "83+hb"), ansi.Color(address, "255+hb"))
 }
 
 func init() {
