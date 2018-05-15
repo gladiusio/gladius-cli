@@ -10,33 +10,32 @@ Our workspace structure: `$GOPATH/src/github.com/gladiusio/gladius-cli`
 
 ## Usage
 
-This CLI includes commands to run different modules of the Gladius Network. To actually use it you need one or more of those modules to be running so that the CLI can communicate with the Gladius Network. As of now this CLI supports communication with the [gladius-control-daemon](https://github.com/gladiusio/gladius-control-daemon) and the [gladius-networkd](https://github.com/gladiusio/gladius-networkd). **You need to be running at least one of these modules in order for the CLI to be able to do anything.**
+This CLI includes commands to run different modules of the Gladius Network. To actually use it you need one or more of those modules to be running so that the CLI can communicate with the Gladius Network. As of now this CLI supports communication with the [gladius-controld](https://github.com/gladiusio/gladius-controld) and the [gladius-networkd](https://github.com/gladiusio/gladius-networkd). **You need to be running at least one of these modules in order for the CLI to be able to do anything.**
 
-1. [Install](https://github.com/golang/dep#installation) `dep`
+1. [Install dep](https://github.com/golang/dep#installation)
 2. `$ cd gladius-cli`
 3. `$ make`
-4. Run one or both of these modules: [gladius-control-daemon](https://github.com/gladiusio/gladius-control-daemon) or [gladius-networkd](https://github.com/gladiusio/gladius-networkd)
+4. Run one or both of these modules: [gladius-controld](https://github.com/gladiusio/gladius-controld) or [gladius-networkd](https://github.com/gladiusio/gladius-networkd)
 5. `$ ./build/gladius --help`
 
 ### Example
 
-*use the base command* `./build/gladius` *to see usage example*
+Use the base command `./build/gladius` to see usage example
 
 **Terminal Window 1:**
 ```
 my-computer: ~
-
-> gladius-control
+$ gladius-control
 Running at http://localhost:3001
 ```
 
 **Terminal Window 2:**
 ```
 my-computer: ~/go/src/github.com/gladiusio/gladius-cli
-> cd build
+$ cd build
 
 my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
-> ./gladius-cli --help
+$ ./gladius-cli --help
 
 Gladius CLI. This can be used to interact with various components of the Gladius Network.
 
@@ -59,11 +58,11 @@ Flags:
 Use "gladius [command] --help" for more information about a command.
 
 my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
-> ./gladius create
+$ ./gladius create
 
-? What is your name? Marcelo
-? What is your email? test@email.com
-? Enter your password: **********
+[Gladius] What is your name? Marcelo
+[Gladius] What is your email? test@email.com
+[Gladius] Enter your password: **********
 
 Tx: 0x12aaa4517e8c0899791de40403d7c0a9a5b44f904e0bfe19c2207d9e338ba68e	 Status: Pending
 Tx: 0x12aaa4517e8c0899791de40403d7c0a9a5b44f904e0bfe19c2207d9e338ba68e	 Status: Successful
@@ -78,11 +77,12 @@ Node Address: 0x4607210e97eD3e7D43929f0eF324c259d4Fa0690
 ```
 
 ### Full list of commands (in order of usage)
+Use `--help` on the base command to see the help menu. Use `--help` any other command for a description of that command.
 
 **base**
 ```
 my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
-> ./gladius
+$ ./gladius
 
 Welcome to the Gladius CLI!
 
@@ -100,9 +100,11 @@ Use the -h flag to see the help menu
 ```
 
 **create**
+
+Deploys a new Gladius Node smart contract containing the encrypted version of the data you submitted
 ```
 my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
-> ./gladius create
+$ ./gladius create
 
 [Gladius] What is your name? Marcelo Test
 [Gladius] What is your email? email@test.com
@@ -122,9 +124,11 @@ Use gladius apply to apply to a pool
 ```
 
 **apply**
+
+Submits the data to a specific pool, allowing them to accept or reject you to become a part of the pool
 ```
 my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
-> ./gladius apply
+$ ./gladius apply
 
 [Gladius] Pool Address:  0xC88a29cf8F0Baf07fc822DEaA24b383Fc30f27e4
 [Gladius] Please type your password:  ********
@@ -137,9 +141,11 @@ Use gladius check to check your application status
 ```
 
 **check**
+
+Check your application status to a specific pool
 ```
 my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
-> ./gladius check
+$ ./gladius check
 
 [Gladius] Pool Address:  0xC88a29cf8F0Baf07fc822DEaA24b383Fc30f27e4
 Pool: 0xC88a29cf8F0Baf07fc822DEaA24b383Fc30f27e4	 Status: Pending
@@ -147,10 +153,13 @@ Pool: 0xC88a29cf8F0Baf07fc822DEaA24b383Fc30f27e4	 Status: Pending
 Use gladius edge start to start the edge node software
 ```
 
-**edge [start|stop]**
+**edge [start | stop]**
+
+Start or stop the edge node software
 ```
 my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
-> ./gladius edge start
+$ ./gladius edge start
+
 Edge Daemon:	 Started the server
 
 Use gladius edge stop to stop the edge node software
@@ -158,9 +167,9 @@ Use gladius edge stop to stop the edge node software
 
 ```
 my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
-> ./gladius edge stop
+$ ./gladius edge stop
+
 Edge Daemon:	 Stopped the server
 
 Use gladius edge start to start the edge node software
 ```
-
