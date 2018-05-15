@@ -35,7 +35,7 @@ my-computer: ~/go/src/github.com/gladiusio/gladius-cli
 $ cd build
 
 my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
-$ ./gladius-cli --help
+$ ./gladius --help
 
 Gladius CLI. This can be used to interact with various components of the Gladius Network.
 
