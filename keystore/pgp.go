@@ -15,13 +15,10 @@ func CreatePGP(data interface{}) (string, error) {
 		return "", fmt.Errorf("%v/keystore.CreatePGP", err)
 	}
 
-	api, err := utils.ControlDaemonHandler([]byte(res))
+	_, err = utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
 		return "", fmt.Errorf("%v/keystore.CreatePGP", err)
 	}
 
-	response := api.Response.(map[string]interface{})
-	path := response["path"].(string)
-
-	return fmt.Sprintf("PGP Path: %s", path), nil
+	return fmt.Sprintf("PGP Key Created"), nil
 }
