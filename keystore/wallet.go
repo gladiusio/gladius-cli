@@ -6,6 +6,7 @@ import (
 
 	"github.com/gladiusio/gladius-cli/utils"
 	"github.com/mgutz/ansi"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateWallet - create a new wallet with passphrase
@@ -34,7 +35,7 @@ func CreateWallet() error {
 	path := response["path"].(string)
 
 	fmt.Println()
-	fmt.Println(ansi.Color("Wallet Address:", "83+hb"), ansi.Color(address, "255+hb"))
+	terminal.Println(ansi.Color("Wallet Address:", "83+hb"), ansi.Color(address, "255+hb"))
 	fmt.Println("Wallet Path: ", path)
 
 	return nil

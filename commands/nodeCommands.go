@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	surveyCore "gopkg.in/AlecAivazis/survey.v1/core"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var cmdCreate = &cobra.Command{
@@ -60,9 +61,9 @@ func createNewNode(cmd *cobra.Command, args []string) {
 			return
 		}
 		fmt.Println()
-		fmt.Println(ansi.Color("Please add test ether to your new wallet from a ropsten faucet", "255+hb"))
+		terminal.Println(ansi.Color("Please add test ether to your new wallet from a ropsten faucet", "255+hb"))
 		fmt.Println()
-		fmt.Println(ansi.Color("Run", "255+hb"), ansi.Color("gladius create", "83+hb"), ansi.Color("again after you've acquired your test ether", "255+hb"))
+		terminal.Println(ansi.Color("Run", "255+hb"), ansi.Color("gladius create", "83+hb"), ansi.Color("again after you've acquired your test ether", "255+hb"))
 		return
 	}
 
@@ -131,7 +132,7 @@ func createNewNode(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	fmt.Println(ansi.Color("Node created!", "83+hb"))
+	terminal.Println(ansi.Color("Node created!", "83+hb"))
 
 	// set node data
 	tx, err = node.SetNodeData(nodeAddress, answers)
@@ -147,12 +148,12 @@ func createNewNode(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	fmt.Println(ansi.Color("Node data set!", "83+hb"))
+	terminal.Println(ansi.Color("Node data set!", "83+hb"))
 
-	fmt.Print(ansi.Color("\nNode Address: ", "83+hb"))
-	fmt.Print(ansi.Color(nodeAddress+"\n", "255+hb"))
+	terminal.Print(ansi.Color("\nNode Address: ", "83+hb"))
+	terminal.Print(ansi.Color(nodeAddress+"\n", "255+hb"))
 
-	fmt.Println("\nUse", ansi.Color("gladius apply", "83+hb"), "to apply to a pool")
+	terminal.Println("\nUse", ansi.Color("gladius apply", "83+hb"), "to apply to a pool")
 }
 
 // send data to pool
@@ -198,7 +199,7 @@ func applyToPool(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Println("\nApplication sent to pool!")
-	fmt.Println("\nUse", ansi.Color("gladius check", "83+hb"), "to check the status of your application")
+	terminal.Println("\nUse", ansi.Color("gladius check", "83+hb"), "to check the status of your application")
 }
 
 // check the application of the node
@@ -220,7 +221,7 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 	// check application status
 	status, _ := node.CheckPoolApplication(nodeAddress, poolAddy)
 	fmt.Println("Pool: " + poolAddy + "\t Status: " + status)
-	fmt.Println("\nUse", ansi.Color("gladius edge start", "83+hb"), "to start the edge node software")
+	terminal.Println("\nUse", ansi.Color("gladius edge start", "83+hb"), "to start the edge node software")
 }
 
 // start or stop the edge daemon
@@ -240,7 +241,7 @@ func edge(cmd *cobra.Command, args []string) {
 			fmt.Println("Error starting the edge node. Make sure it's running!")
 		} else {
 			fmt.Println("Edge Daemon:\t", reply)
-			fmt.Println("\nUse", ansi.Color("gladius edge stop", "83+hb"), "to stop the edge node software")
+			terminal.Println("\nUse", ansi.Color("gladius edge stop", "83+hb"), "to stop the edge node software")
 		}
 	case "stop":
 		reply, err := node.StopEdgeNode()
@@ -262,7 +263,7 @@ func edge(cmd *cobra.Command, args []string) {
 func test(cmd *cobra.Command, args []string) {
 	address := "0x1234567890123456789012345678901234567890"
 	// path := "/Users/name/.config/gladius/wallet/UTC-2018-04-14-12533634-DSFX-2234DAXF-3FSDFWEGWES.json"
-	fmt.Println(ansi.Color("Wallet Address:", "83+hb"), ansi.Color(address, "255+hb"))
+	terminal.Println(ansi.Color("Wallet Address:", "83+hb"), ansi.Color(address, "255+hb"))
 }
 
 func init() {
