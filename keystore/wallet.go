@@ -32,11 +32,9 @@ func CreateWallet() error {
 
 	response := api.Response.(map[string]interface{})
 	address := response["address"].(string)
-	path := response["path"].(string)
 
 	fmt.Println()
 	terminal.Println(ansi.Color("Wallet Address:", "83+hb"), ansi.Color(address, "255+hb"))
-	fmt.Println("Wallet Path: ", path)
 
 	return nil
 }
