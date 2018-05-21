@@ -228,6 +228,11 @@ func edge(cmd *cobra.Command, args []string) {
 
 	var reply string
 
+	if len(args) == 0 {
+		fmt.Println("Please use gladius edge start or gladius edge stop")
+		return
+	}
+
 	switch args[0] {
 	case "start":
 		reply, err := node.StartEdgeNode()
