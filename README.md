@@ -14,9 +14,10 @@ This CLI includes commands to run different modules of the Gladius Network. To a
 
 1. [Install dep](https://github.com/golang/dep#installation)
 2. `$ cd gladius-cli`
-3. `$ make`
-4. Run one or both of these modules: [gladius-controld](https://github.com/gladiusio/gladius-controld) or [gladius-networkd](https://github.com/gladiusio/gladius-networkd)
-5. `$ ./build/gladius --help`
+3. `$ make dependencies`
+4. `$ make`
+5. Run one or both of these modules: [gladius-controld](https://github.com/gladiusio/gladius-controld) or [gladius-networkd](https://github.com/gladiusio/gladius-networkd)
+6. `$ ./build/gladius --help`
 
 ### Example
 
