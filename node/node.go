@@ -51,6 +51,25 @@ func GetNodeAddress() (string, error) {
 	return address, nil //node address
 }
 
+// GetNodeData - get node address from owner lookup
+func GetNodeData(address string) (map[string]interface{}, error) {
+	url := "http://localhost:3001/api/node/" + address + "/data"
+
+	res, err := utils.SendRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("%v/node.GetNodeAddress", err)
+	}
+
+	api, err := utils.ControlDaemonHandler([]byte(res))
+	if err != nil {
+		return nil, fmt.Errorf("%v/node.GetNodeAddress", err)
+	}
+
+	response := api.Response.(map[string]interface{})
+
+	return response, nil //node data
+}
+
 // SetNodeData - set data for a Node contract
 func SetNodeData(nodeAddress string, data map[string]interface{}) (string, error) {
 	url := fmt.Sprintf("http://localhost:3001/api/node/%s/data", nodeAddress)
@@ -144,18 +163,18 @@ func StopEdgeNode() (string, error) {
 }
 
 // StatusEdgeNode - status of edge node server
-// func StatusEdgeNode() (string, error) {
-// 	// Client use HTTP transport.
-// 	clientHTTP := jsonrpc2.NewHTTPClient("http://localhost:5000/rpc")
-// 	defer clientHTTP.Close()
-//
-// 	var reply string
-//
-// 	// Synchronous call using positional params and TCP.
-// 	err := clientHTTP.Call("GladiusEdge.Status", nil, &reply)
-// 	if err != nil {
-// 		return "", fmt.Errorf("%v/node.StatusEdgeNode", err)
-// 	}
-//
-// 	return reply, nil
-// }
+func StatusEdgeNode() (string, error) {
+	// Client use HTTP transport.
+	clientHTTP := jsonrpc2.NewHTTPClient("http://localhost:5000/rpc")
+	defer clientHTTP.Close()
+
+	var reply string
+
+	// Synchronous call using positional params and TCP.
+	err := clientHTTP.Call("GladiusEdge.Status", nil, &reply)
+	if err != nil {
+		return "", fmt.Errorf("%v/node.StatusEdgeNode", err)
+	}
+
+	return reply, nil
+}

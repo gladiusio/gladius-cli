@@ -43,12 +43,19 @@ var cmdEdge = &cobra.Command{
 	Run:   edge,
 }
 
-var cmdTest = &cobra.Command{
-	Use:   "test",
-	Short: "Test function",
-	Long:  "Have something to test but dont want to ruin everything else? Put it in this command!",
-	Run:   test,
+var cmdProfile = &cobra.Command{
+	Use:   "profile",
+	Short: "See your profile information",
+	Long:  "Display current users profile information",
+	Run:   profile,
 }
+
+// var cmdTest = &cobra.Command{
+// 	Use:   "test",
+// 	Short: "Test function",
+// 	Long:  "Have something to test but dont want to ruin everything else? Put it in this command!",
+// 	Run:   test,
+// }
 
 // collect user info, create node, set node data
 func createNewNode(cmd *cobra.Command, args []string) {
@@ -251,8 +258,13 @@ func edge(cmd *cobra.Command, args []string) {
 			fmt.Println("Edge Daemon:\t", reply)
 			fmt.Println("\nUse", ansi.Color("gladius edge start", "83+hb"), "to start the edge node software")
 		}
-	// case "status":
-	// 	reply, _ = node.StatusEdgeNode()
+	case "status":
+		reply, err := node.StatusEdgeNode()
+		if err != nil {
+			fmt.Println("Error communicating with the edge node. Make sure it's running!")
+		} else {
+			fmt.Println("Edge Daemon:\t", reply)
+		}
 	default:
 		reply = "command not recognized"
 		fmt.Println("Edge Daemon:\t", reply)
@@ -260,11 +272,37 @@ func edge(cmd *cobra.Command, args []string) {
 	}
 }
 
-func test(cmd *cobra.Command, args []string) {
-	address := "0x1234567890123456789012345678901234567890"
-	// path := "/Users/name/.config/gladius/wallet/UTC-2018-04-14-12533634-DSFX-2234DAXF-3FSDFWEGWES.json"
-	terminal.Println(ansi.Color("Wallet Address:", "83+hb"), ansi.Color(address, "255+hb"))
+// get a users profile
+func profile(cmd *cobra.Command, args []string) {
+	accounts, err := keystore.GetAccounts()
+	if err != nil {
+		fmt.Println("No accounts found. Create a wallet with: gladius create")
+		return
+	}
+	wallet := accounts[0].(map[string]interface{})
+	userAddress := wallet["address"].(string)
+	fmt.Println("\nAccount Address:", userAddress)
+
+	address, err := node.GetNodeAddress()
+	if err != nil {
+		fmt.Println("No Node found. Create a node with : gladius create")
+		return
+	}
+	fmt.Println("Node Address:", address)
+
+	data, err := node.GetNodeData(address)
+	if err != nil {
+		fmt.Println("No Node found. Create a node with : gladius create")
+		return
+	}
+
+	fmt.Println("Node Name:", data["name"].(string))
+	fmt.Println("Node Email:", data["email"].(string))
+	fmt.Println("Node IP:", data["ip"].(string))
 }
+
+// func test(cmd *cobra.Command, args []string) {
+// }
 
 func init() {
 	surveyCore.QuestionIcon = "[Gladius]"
@@ -272,5 +310,5 @@ func init() {
 	rootCmd.AddCommand(cmdApply)
 	rootCmd.AddCommand(cmdCheck)
 	rootCmd.AddCommand(cmdEdge)
-	rootCmd.AddCommand(cmdTest)
+	rootCmd.AddCommand(cmdProfile)
 }
