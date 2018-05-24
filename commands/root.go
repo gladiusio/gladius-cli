@@ -25,7 +25,7 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-// call this to "activate" commands
+// Execute - call this to "activate" commands
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

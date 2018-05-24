@@ -60,9 +60,9 @@ var cmdProfile = &cobra.Command{
 // collect user info, create node, set node data
 func createNewNode(cmd *cobra.Command, args []string) {
 	// make sure they have a wallet, if they dont, make one
-	wallet, err := keystore.EnsureAccount()
+	wallet, _ := keystore.EnsureAccount()
 	if !wallet {
-		err = keystore.CreateWallet()
+		err := keystore.CreateWallet()
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -102,7 +102,7 @@ func createNewNode(cmd *cobra.Command, args []string) {
 	answers := make(map[string]interface{})
 
 	// perform the questions
-	err = survey.Ask(qs, &answers)
+	err := survey.Ask(qs, &answers)
 	if err != nil {
 		return
 	}
@@ -166,9 +166,9 @@ func createNewNode(cmd *cobra.Command, args []string) {
 // send data to pool
 func applyToPool(cmd *cobra.Command, args []string) {
 	// make sure they have a wallet, if they dont, make one
-	wallet, err := keystore.EnsureAccount()
+	wallet, _ := keystore.EnsureAccount()
 	if !wallet {
-		err = keystore.CreateWallet()
+		err := keystore.CreateWallet()
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -178,11 +178,33 @@ func applyToPool(cmd *cobra.Command, args []string) {
 	}
 
 	// build question
-	poolAddy := ""
-	prompt := &survey.Input{
-		Message: "Pool Address: ",
+	var qs = []*survey.Question{
+		{
+			Name:   "pool",
+			Prompt: &survey.Input{Message: "Pool Address: "},
+			Validate: func(val interface{}) error {
+				re := regexp.MustCompile("^0x[a-fA-F0-9]{40}$") // regex for email
+				if val.(string) == "" {
+					return errors.New("This is a required field")
+				} else if !re.MatchString(val.(string)) {
+					return errors.New("Please enter a valid ethereum address")
+				} else {
+					return nil
+				}
+			},
+		},
 	}
-	survey.AskOne(prompt, &poolAddy, nil)
+
+	// the answers will be written to this struct
+	answers := make(map[string]interface{})
+
+	// perform the questions
+	err := survey.Ask(qs, &answers)
+	if err != nil {
+		return
+	}
+
+	poolAddy := answers["pool"]
 
 	// save the node address
 	nodeAddress, err := node.GetNodeAddress()
@@ -192,7 +214,7 @@ func applyToPool(cmd *cobra.Command, args []string) {
 	}
 
 	// send data to the pool
-	tx, err := node.ApplyToPool(nodeAddress, poolAddy)
+	tx, err := node.ApplyToPool(nodeAddress, poolAddy.(string))
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -211,12 +233,34 @@ func applyToPool(cmd *cobra.Command, args []string) {
 
 // check the application of the node
 func checkPoolApp(cmd *cobra.Command, args []string) {
-	// build the prompt
-	poolAddy := ""
-	prompt := &survey.Input{
-		Message: "Pool Address: ",
+	// build question
+	var qs = []*survey.Question{
+		{
+			Name:   "pool",
+			Prompt: &survey.Input{Message: "Pool Address: "},
+			Validate: func(val interface{}) error {
+				re := regexp.MustCompile("^0x[a-fA-F0-9]{40}$") // regex for email
+				if val.(string) == "" {
+					return errors.New("This is a required field")
+				} else if !re.MatchString(val.(string)) {
+					return errors.New("Please enter a valid ethereum address")
+				} else {
+					return nil
+				}
+			},
+		},
 	}
-	survey.AskOne(prompt, &poolAddy, nil)
+
+	// the answers will be written to this struct
+	answers := make(map[string]interface{})
+
+	// perform the questions
+	err := survey.Ask(qs, &answers)
+	if err != nil {
+		return
+	}
+
+	poolAddy := answers["pool"]
 
 	// save the node address
 	nodeAddress, err := node.GetNodeAddress()
@@ -226,18 +270,16 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 	}
 
 	// check application status
-	status, _ := node.CheckPoolApplication(nodeAddress, poolAddy)
-	fmt.Println("Pool: " + poolAddy + "\t Status: " + status)
+	status, _ := node.CheckPoolApplication(nodeAddress, poolAddy.(string))
+	fmt.Println("Pool: " + poolAddy.(string) + "\t Status: " + status)
 	terminal.Println("\nUse", ansi.Color("gladius edge start", "83+hb"), "to start the edge node software")
 }
 
 // start or stop the edge daemon
 func edge(cmd *cobra.Command, args []string) {
 
-	var reply string
-
 	if len(args) == 0 {
-		fmt.Println("Please use gladius edge start or gladius edge stop")
+		fmt.Println("Please use: \ngladius edge start\ngladius edge stop\ngladius edge status")
 		return
 	}
 
@@ -266,7 +308,7 @@ func edge(cmd *cobra.Command, args []string) {
 			fmt.Println("Edge Daemon:\t", reply)
 		}
 	default:
-		reply = "command not recognized"
+		reply := "command not recognized"
 		fmt.Println("Edge Daemon:\t", reply)
 		fmt.Println("\nUse", ansi.Color("gladius edge -h", "83+hb"), "for help")
 	}
@@ -281,28 +323,25 @@ func profile(cmd *cobra.Command, args []string) {
 	}
 	wallet := accounts[0].(map[string]interface{})
 	userAddress := wallet["address"].(string)
-	fmt.Println("\nAccount Address:", userAddress)
+	fmt.Println()
+	terminal.Println(ansi.Color("Account Address:", "83+hb"), ansi.Color(userAddress, "255+hb"))
 
 	address, err := node.GetNodeAddress()
 	if err != nil {
 		fmt.Println("No Node found. Create a node with : gladius create")
 		return
 	}
-	fmt.Println("Node Address:", address)
+	terminal.Println(ansi.Color("Node Address:", "83+hb"), ansi.Color(address, "255+hb"))
 
 	data, err := node.GetNodeData(address)
 	if err != nil {
 		fmt.Println("No Node found. Create a node with : gladius create")
 		return
 	}
-
-	fmt.Println("Node Name:", data["name"].(string))
-	fmt.Println("Node Email:", data["email"].(string))
-	fmt.Println("Node IP:", data["ip"].(string))
+	terminal.Println(ansi.Color("Node Name:", "83+hb"), ansi.Color(data["name"].(string), "255+hb"))
+	terminal.Println(ansi.Color("Node Email:", "83+hb"), ansi.Color(data["email"].(string), "255+hb"))
+	terminal.Println(ansi.Color("Node IP:", "83+hb"), ansi.Color(data["ip"].(string), "255+hb"))
 }
-
-// func test(cmd *cobra.Command, args []string) {
-// }
 
 func init() {
 	surveyCore.QuestionIcon = "[Gladius]"
