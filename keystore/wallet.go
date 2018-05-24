@@ -40,31 +40,31 @@ func CreateWallet() error {
 }
 
 // GetAccounts - get accounts at the standard config path
-func GetAccounts() error {
+func GetAccounts() ([]interface{}, error) {
 	url := "http://localhost:3001/api/keystore/wallets"
 
 	res, err := utils.SendRequest("GET", url, nil)
 	if err != nil {
-		return fmt.Errorf("%v/keystore.GetAccounts", err)
+		return nil, fmt.Errorf("%v/keystore.GetAccounts", err)
 	}
 
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return fmt.Errorf("%v/keystore.GetAccounts", err)
+		return nil, fmt.Errorf("%v/keystore.GetAccounts", err)
 	}
 
 	response := api.Response.([]interface{})
 
 	if len(response) < 1 {
-		return errors.New("No accounts found. Please create a wallet with: gladius-cli wallet create")
+		return nil, errors.New("No accounts found. Please create a wallet with: gladius create")
 	}
 
-	return nil
+	return response, nil
 }
 
 // EnsureAccount - Make sure they have a wallet
 func EnsureAccount() (bool, error) {
-	err := GetAccounts()
+	_, err := GetAccounts()
 	if err != nil {
 		return false, err
 	}

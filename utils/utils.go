@@ -13,8 +13,8 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
-// ApiResponse - standard response from the control daemon api
-type ApiResponse struct {
+// APIResponse - standard response from the control daemon api
+type APIResponse struct {
 	Message  string      `json:"message"`
 	Success  bool        `json:"success"`
 	Error    string      `json:"error"`
@@ -148,23 +148,23 @@ func WaitForTx(tx string) (bool, error) {
 
 	if err != nil {
 		return false, fmt.Errorf("%v/utils.WaitForTx", err)
-	} else {
-		fmt.Printf("\nTx: %s\t Status: Successful\n", tx)
-		return true, nil
 	}
+
+	fmt.Printf("\nTx: %s\t Status: Successful\n", tx)
+	return true, nil
 }
 
 // ControlDaemonHandler - handler for the API responses
-func ControlDaemonHandler(_res []byte) (ApiResponse, error) {
-	var response = ApiResponse{}
+func ControlDaemonHandler(_res []byte) (APIResponse, error) {
+	var response = APIResponse{}
 
 	err := json.Unmarshal(_res, &response)
 	if err != nil {
-		return ApiResponse{}, fmt.Errorf("%v:json.Unmarshall/utils.ControlDaemonHandler", err)
+		return APIResponse{}, fmt.Errorf("%v:json.Unmarshall/utils.ControlDaemonHandler", err)
 	}
 
 	if !response.Success {
-		return ApiResponse{}, fmt.Errorf("%s:utils.ControlDaemonHandler", response.Message)
+		return APIResponse{}, fmt.Errorf("%s:utils.ControlDaemonHandler", response.Message)
 	}
 
 	return response, nil
@@ -218,7 +218,7 @@ func CachePassphrase(passphrase string) {
 
 // ############ DEPRECATED ############
 
-// custom function to return a mapping of the environment file (has to be .toml)
+// GetEnvMap - custom function to return a mapping of the environment file (has to be .toml)
 // this technically works but reading from *.toml is deprecated
 func GetEnvMap(filename string) (map[string]map[string]string, error) {
 	// read env file
@@ -239,7 +239,7 @@ func GetEnvMap(filename string) (map[string]map[string]string, error) {
 	return envFile, nil
 }
 
-// custom function to return a mapping of the environment file (has to be .toml)
+// WriteToEnv - custom function to return a mapping of the environment file (has to be .toml)
 // this technically works but writing to *.toml is deprecated
 func WriteToEnv(section, key, value, source, destination string) error {
 	// read the file
@@ -251,7 +251,7 @@ func WriteToEnv(section, key, value, source, destination string) error {
 
 	// decode and put it into the mapping
 	var envFile = make(map[string]map[string]string)
-	if _, err := toml.Decode(string(b), &envFile); err != nil {
+	if _, err = toml.Decode(string(b), &envFile); err != nil {
 		fmt.Println("Error decoding")
 	}
 
@@ -260,7 +260,7 @@ func WriteToEnv(section, key, value, source, destination string) error {
 
 	// re-encode the mapping
 	buf := new(bytes.Buffer)
-	if err := toml.NewEncoder(buf).Encode(envFile); err != nil {
+	if err = toml.NewEncoder(buf).Encode(envFile); err != nil {
 		fmt.Println("Error encoding")
 		return err
 	}
