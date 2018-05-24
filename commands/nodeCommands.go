@@ -37,9 +37,9 @@ var cmdCheck = &cobra.Command{
 }
 
 var cmdEdge = &cobra.Command{
-	Use:   "edge [start|stop]",
-	Short: "Start the edge daemon",
-	Long:  "Start the edge daemon networking server",
+	Use:   "edge [start|stop|status]",
+	Short: "Start/Stop or check status of the edge daemon",
+	Long:  "Start/Stop or check status of the edge daemon networking server",
 	Run:   edge,
 }
 
@@ -289,28 +289,32 @@ func edge(cmd *cobra.Command, args []string) {
 		if err != nil {
 			fmt.Println("Error starting the edge node. Make sure it's running!")
 		} else {
-			fmt.Println("Edge Daemon:\t", reply)
+			terminal.Println(ansi.Color("Edge Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
 			terminal.Println("\nUse", ansi.Color("gladius edge stop", "83+hb"), "to stop the edge node software")
+			terminal.Println("Use", ansi.Color("gladius edge status", "83+hb"), "to check the status of the edge node software")
 		}
 	case "stop":
 		reply, err := node.StopEdgeNode()
 		if err != nil {
 			fmt.Println("Error stopping the edge node. Make sure it's running!")
 		} else {
-			fmt.Println("Edge Daemon:\t", reply)
-			fmt.Println("\nUse", ansi.Color("gladius edge start", "83+hb"), "to start the edge node software")
+			terminal.Println(ansi.Color("Edge Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
+			terminal.Println("\nUse", ansi.Color("gladius edge start", "83+hb"), "to start the edge node software")
+			terminal.Println("Use", ansi.Color("gladius edge status", "83+hb"), "to check the status of the edge node software")
 		}
 	case "status":
 		reply, err := node.StatusEdgeNode()
 		if err != nil {
 			fmt.Println("Error communicating with the edge node. Make sure it's running!")
 		} else {
-			fmt.Println("Edge Daemon:\t", reply)
+			terminal.Println(ansi.Color("Edge Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
+			terminal.Println("\nUse", ansi.Color("gladius edge start", "83+hb"), "to start the edge node software")
+			terminal.Println("Use", ansi.Color("gladius edge stop", "83+hb"), "to stop the edge node software")
 		}
 	default:
 		reply := "command not recognized"
-		fmt.Println("Edge Daemon:\t", reply)
-		fmt.Println("\nUse", ansi.Color("gladius edge -h", "83+hb"), "for help")
+		terminal.Println(ansi.Color("Edge Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
+		terminal.Println("\nUse", ansi.Color("gladius edge -h", "83+hb"), "for help")
 	}
 }
 
