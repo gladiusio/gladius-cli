@@ -129,8 +129,8 @@ func CheckPoolApplication(nodeAddress, poolAddress string) (string, error) {
 	return status, nil // pool status
 }
 
-// StartEdgeNode - start edge node server
-func StartEdgeNode() (string, error) {
+// StartNetworkNode - start networking node server
+func StartNetworkNode() (string, error) {
 	// Client use HTTP transport.
 	clientHTTP := jsonrpc2.NewHTTPClient("http://localhost:5000/rpc")
 	defer clientHTTP.Close()
@@ -140,13 +140,13 @@ func StartEdgeNode() (string, error) {
 	// Synchronous call using positional params and TCP.
 	err := clientHTTP.Call("GladiusEdge.Start", nil, &reply)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.StopEdgeNode", err)
+		return "", fmt.Errorf("%v/node.StopNetworkNode", err)
 	}
 	return reply, nil
 }
 
-// StopEdgeNode - stop edge node server
-func StopEdgeNode() (string, error) {
+// StopNetworkNode - stop network node server
+func StopNetworkNode() (string, error) {
 	// Client use HTTP transport.
 	clientHTTP := jsonrpc2.NewHTTPClient("http://localhost:5000/rpc")
 	defer clientHTTP.Close()
@@ -156,14 +156,14 @@ func StopEdgeNode() (string, error) {
 	// Synchronous call using positional params and TCP.
 	err := clientHTTP.Call("GladiusEdge.Stop", nil, &reply)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.StopEdgeNode", err)
+		return "", fmt.Errorf("%v/node.StopNetworkNode", err)
 	}
 
 	return reply, nil
 }
 
-// StatusEdgeNode - status of edge node server
-func StatusEdgeNode() (string, error) {
+// StatusNetworkNode - status of network node server
+func StatusNetworkNode() (string, error) {
 	// Client use HTTP transport.
 	clientHTTP := jsonrpc2.NewHTTPClient("http://localhost:5000/rpc")
 	defer clientHTTP.Close()
@@ -173,7 +173,7 @@ func StatusEdgeNode() (string, error) {
 	// Synchronous call using positional params and TCP.
 	err := clientHTTP.Call("GladiusEdge.Status", nil, &reply)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.StatusEdgeNode", err)
+		return "", fmt.Errorf("%v/node.StatusNetworkNode", err)
 	}
 
 	return reply, nil
