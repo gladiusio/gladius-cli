@@ -82,8 +82,7 @@ Use `--help` on the base command to see the help menu. Use `--help` any other co
 
 **base**
 ```
-my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
-$ ./gladius
+$ gladius
 
 Welcome to the Gladius CLI!
 
@@ -95,17 +94,16 @@ $ gladius check
 
 After you are accepted into a pool, you can become an edge node:
 
-$ gladius edge start
+$ gladius node start
 
 Use the -h flag to see the help menu
 ```
 
 **create**
 
-Deploys a new Gladius Node smart contract containing the encrypted version of the data you submitted
+Deploys a new Gladius Node smart contract containing the encrypted version of the data you submitted. If you enter in the wrong information you can just run the command again to make a new node.
 ```
-my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
-$ ./gladius create
+$ gladius create
 
 [Gladius] What is your name? Marcelo Test
 [Gladius] What is your email? email@test.com
@@ -128,8 +126,7 @@ Use gladius apply to apply to a pool
 
 Submits the data to a specific pool, allowing them to accept or reject you to become a part of the pool
 ```
-my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
-$ ./gladius apply
+$ gladius apply
 
 [Gladius] Pool Address:  0xC88a29cf8F0Baf07fc822DEaA24b383Fc30f27e4
 [Gladius] Please type your password:  ********
@@ -145,32 +142,54 @@ Use gladius check to check your application status
 
 Check your application status to a specific pool
 ```
-my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
-$ ./gladius check
+
+$ gladius check
 
 [Gladius] Pool Address:  0xC88a29cf8F0Baf07fc822DEaA24b383Fc30f27e4
 Pool: 0xC88a29cf8F0Baf07fc822DEaA24b383Fc30f27e4	 Status: Pending
 
-Use gladius edge start to start the edge node software
+Use gladius node start to start the node networking software
 ```
 
-**edge [start | stop]**
+**node [start | stop | status]**
 
-Start or stop the edge node software
-```
-my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
-$ ./gladius edge start
-
-Edge Daemon:	 Started the server
-
-Use gladius edge stop to stop the edge node software
+Start/stop or check the status of the node networking software
 ```
 
+$ gladius node start
+Network Daemon:	 Started the server
+
+Use gladius node stop to stop the node networking software
+Use gladius node status to check the status of the node networking software
 ```
-my-computer: ~/go/src/github.com/gladiusio/gladius-cli/build
-$ ./gladius edge stop
 
-Edge Daemon:	 Stopped the server
+```
 
-Use gladius edge start to start the edge node software
+$ gladius node stop
+Network Daemon:	 Stopped the server
+
+Use gladius node start to start the node networking software
+Use gladius node status to check the status of the node networking software
+```
+
+```
+
+$ gladius node status
+Network Daemon:	 Server is Running
+
+Use gladius node start to start the node networking software
+Use gladius node stop to stop the node networking software
+```
+
+**profile**
+
+See information regarding your node
+```
+$ gladius profile
+
+Account Address: 0x8C3650F01aA308e0B56F12530378748190c6b454
+Node Address: 0xf15aea30341982b117583f36cf516f6cea5ddf91
+Node Name: Marcelo
+Node Email: marcelo@test.com
+Node IP: 12.12.123.12
 ```
