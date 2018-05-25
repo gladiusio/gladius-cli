@@ -37,9 +37,9 @@ var cmdCheck = &cobra.Command{
 }
 
 var cmdNetwork = &cobra.Command{
-	Use:   "network [start|stop|status]",
-	Short: "Start/Stop or check status of the networking daemon",
-	Long:  "Start/Stop or check status of the networking server",
+	Use:   "node [start|stop|status]",
+	Short: "Start/Stop or check status of your node's networking server",
+	Long:  "Start/Stop or check status of your node's networking server",
 	Run:   network,
 }
 
@@ -272,14 +272,14 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 	// check application status
 	status, _ := node.CheckPoolApplication(nodeAddress, poolAddy.(string))
 	fmt.Println("Pool: " + poolAddy.(string) + "\t Status: " + status)
-	terminal.Println("\nUse", ansi.Color("gladius network start", "83+hb"), "to start the network node software")
+	terminal.Println("\nUse", ansi.Color("gladius node start", "83+hb"), "to start the node networking software")
 }
 
-// start or stop the network daemon
+// start or stop the node daemon
 func network(cmd *cobra.Command, args []string) {
 
 	if len(args) == 0 {
-		fmt.Println("Please use: \ngladius network start\ngladius network stop\ngladius network status")
+		fmt.Println("Please use: \ngladius node start\ngladius node stop\ngladius node status")
 		return
 	}
 
@@ -287,34 +287,34 @@ func network(cmd *cobra.Command, args []string) {
 	case "start":
 		reply, err := node.StartNetworkNode()
 		if err != nil {
-			fmt.Println("Error starting the network node. Make sure it's running!")
+			fmt.Println("Error starting the node networking daemon. Make sure it's running!")
 		} else {
 			terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
-			terminal.Println("\nUse", ansi.Color("gladius network stop", "83+hb"), "to stop the network node software")
-			terminal.Println("Use", ansi.Color("gladius network status", "83+hb"), "to check the status of the network node software")
+			terminal.Println("\nUse", ansi.Color("gladius node stop", "83+hb"), "to stop the node networking software")
+			terminal.Println("Use", ansi.Color("gladius node status", "83+hb"), "to check the status of the node networking software")
 		}
 	case "stop":
 		reply, err := node.StopNetworkNode()
 		if err != nil {
-			fmt.Println("Error stopping the network node. Make sure it's running!")
+			fmt.Println("Error stopping the node networking daemon. Make sure it's running!")
 		} else {
 			terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
-			terminal.Println("\nUse", ansi.Color("gladius network start", "83+hb"), "to start the network node software")
-			terminal.Println("Use", ansi.Color("gladius network status", "83+hb"), "to check the status of the network node software")
+			terminal.Println("\nUse", ansi.Color("gladius node start", "83+hb"), "to start the node networking software")
+			terminal.Println("Use", ansi.Color("gladius node status", "83+hb"), "to check the status of the node networking software")
 		}
 	case "status":
 		reply, err := node.StatusNetworkNode()
 		if err != nil {
-			fmt.Println("Error communicating with the network node. Make sure it's running!")
+			fmt.Println("Error communicating with the node networking daemon. Make sure it's running!")
 		} else {
 			terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
-			terminal.Println("\nUse", ansi.Color("gladius network start", "83+hb"), "to start the network node software")
-			terminal.Println("Use", ansi.Color("gladius network stop", "83+hb"), "to stop the network node software")
+			terminal.Println("\nUse", ansi.Color("gladius node start", "83+hb"), "to start the node networking software")
+			terminal.Println("Use", ansi.Color("gladius node stop", "83+hb"), "to stop the node networking software")
 		}
 	default:
 		reply := "command not recognized"
 		terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
-		terminal.Println("\nUse", ansi.Color("gladius network -h", "83+hb"), "for help")
+		terminal.Println("\nUse", ansi.Color("gladius node -h", "83+hb"), "for help")
 	}
 }
 
