@@ -16,10 +16,9 @@ var rootCmd = &cobra.Command{
 		fmt.Println("\nWelcome to the Gladius CLI!")
 		fmt.Println("\nHere are the commands to create a node and apply to a pool in order:")
 		fmt.Println("\n$ gladius create")
-		fmt.Println("$ gladius apply")
 		fmt.Println("$ gladius check")
 		fmt.Println("\nAfter you are accepted into a pool, you can become an edge node:")
-		fmt.Println("\n$ gladius edge start")
+		fmt.Println("\n$ gladius node start")
 		fmt.Println("\nUse the -h flag to see the help menu")
 
 	},
