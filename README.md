@@ -19,6 +19,13 @@ This CLI includes commands to run different modules of the Gladius Network. To a
 5. Run one or both of these modules: [gladius-controld](https://github.com/gladiusio/gladius-controld) or [gladius-networkd](https://github.com/gladiusio/gladius-networkd)
 6. `$ ./build/gladius --help`
 
+Optionally, you can install and run linting tools:
+```sh
+go get gopkg.in/alecthomas/gometalinter.v2
+gometalinter.v2 --install
+make lint
+```
+
 ### Example
 
 Use the base command `./build/gladius` to see usage example

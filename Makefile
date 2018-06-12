@@ -48,6 +48,9 @@ dependencies:
 test: $(CLI_SRC)
 	$(GOTEST) $(CLI_SRC)
 
+lint:
+	gometalinter.v2 ./...	
+
 cli: test
 	# compiling binary
 	$(GOBUILD) -o $(CLI_DEST) $(CLI_SRC)
