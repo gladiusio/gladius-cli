@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
-	"regexp"
+	"net"
+	"strings"
 
 	"github.com/gladiusio/gladius-cli/keystore"
 	"github.com/gladiusio/gladius-cli/node"
@@ -11,13 +11,12 @@ import (
 	"github.com/gladiusio/gladius-cli/utils"
 	"github.com/mgutz/ansi"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
 	surveyCore "gopkg.in/AlecAivazis/survey.v1/core"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var cmdCreate = &cobra.Command{
-	Use:   "create",
+	Use:   "create [wallet or node] [name(node)] [email(node)]",
 	Short: "Deploy a new Node smart contract",
 	Long:  "Deploys a new Node smart contract to the network with data",
 	Run:   createNewNode,
@@ -65,60 +64,51 @@ var cmdMarket = &cobra.Command{
 	Run:   marketCommands,
 }
 
-// var cmdTest = &cobra.Command{
-// 	Use:   "test",
-// 	Short: "Test function",
-// 	Long:  "Have something to test but dont want to ruin everything else? Put it in this command!",
-// 	Run:   test,
-// }
+var cmdAccount = &cobra.Command{
+	Use:   "account",
+	Short: "Print users account address",
+	Long:  "Print users account address",
+	Run:   account,
+}
+
+var cmdTest = &cobra.Command{
+	Use:   "test",
+	Short: "Test function",
+	Long:  "Have something to test but dont want to ruin everything else? Put it in this command!",
+	Run:   test,
+}
 
 // collect user info, create node, set node data
 func createNewNode(cmd *cobra.Command, args []string) {
-	// make sure they have a wallet, if they dont, make one
-	wallet, _ := keystore.EnsureAccount()
-	if !wallet {
-		err := keystore.CreateWallet()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		fmt.Println()
-		terminal.Println(ansi.Color("Please add test ether to your new wallet from a ropsten faucet", "255+hb"))
-		fmt.Println()
-		terminal.Println(ansi.Color("Run", "255+hb"), ansi.Color("gladius create", "83+hb"), ansi.Color("again after you've acquired your test ether", "255+hb"))
-		return
-	}
-
-	// create the user questions
-	var qs = []*survey.Question{
-		{
-			Name:      "name",
-			Prompt:    &survey.Input{Message: "What is your name?"},
-			Validate:  survey.Required,
-			Transform: survey.Title,
-		},
-		{
-			Name:   "email",
-			Prompt: &survey.Input{Message: "What is your email?"},
-			Validate: func(val interface{}) error {
-				re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$") // regex for email
-				if val.(string) == "" {
-					return errors.New("This is a required field")
-				} else if !re.MatchString(val.(string)) {
-					return errors.New("Please enter a valid email address")
-				} else {
-					return nil
-				}
-			},
-		},
-	}
-
-	// the answers will be written to this struct
+	// user data passed in
 	answers := make(map[string]interface{})
 
-	// perform the questions
-	err := survey.Ask(qs, &answers)
-	if err != nil {
+	nodeType := true
+
+	// only accept 3 args: type, name, and email
+	for index, arg := range args {
+		if index >= 3 {
+			break
+		}
+		if index == 0 {
+			if strings.Compare(arg, "wallet") == 0 {
+				nodeType = false
+			}
+		}
+		switch index {
+		case 1:
+			answers["name"] = arg
+		case 2:
+			answers["email"] = arg
+		}
+	}
+
+	// if they do gladius create wallet
+	if !nodeType {
+		err := keystore.CreateWallet()
+		if err != nil {
+			panic(err)
+		}
 		return
 	}
 
@@ -126,12 +116,14 @@ func createNewNode(cmd *cobra.Command, args []string) {
 	keystore.CreatePGP(answers)
 
 	// get ip of current machine
-	ip, err := utils.GetIP()
+	addrs, err := net.InterfaceAddrs()
 	if err != nil {
-		return
+		panic(err)
 	}
+	// everything before the query
+	ip := strings.Split(addrs[4].String(), "/")[0]
+
 	answers["ip"] = ip
-	answers["status"] = "active"
 
 	// create the node
 	tx, err := node.CreateNode()
@@ -180,43 +172,18 @@ func createNewNode(cmd *cobra.Command, args []string) {
 
 // send data to pool
 func applyToPool(cmd *cobra.Command, args []string) {
-	// make sure they have a wallet, if they dont, make one
-	wallet, _ := keystore.EnsureAccount()
-	if !wallet {
-		err := keystore.CreateWallet()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		fmt.Println("Please add test ether to your new wallet from a ropsten faucet")
-		return
-	}
-
-	// build question
-	var qs = []*survey.Question{
-		{
-			Name:   "pool",
-			Prompt: &survey.Input{Message: "Pool Address: "},
-			Validate: func(val interface{}) error {
-				re := regexp.MustCompile("^0x[a-fA-F0-9]{40}$") // regex for email
-				if val.(string) == "" {
-					return errors.New("This is a required field")
-				} else if !re.MatchString(val.(string)) {
-					return errors.New("Please enter a valid ethereum address")
-				} else {
-					return nil
-				}
-			},
-		},
-	}
-
-	// the answers will be written to this struct
+	// user data passed in
 	answers := make(map[string]interface{})
 
-	// perform the questions
-	err := survey.Ask(qs, &answers)
-	if err != nil {
-		return
+	// only accept 1 arg1: pool
+	for index, arg := range args {
+		if index >= 1 {
+			break
+		}
+		switch index {
+		case 0:
+			answers["pool"] = arg
+		}
 	}
 
 	poolAddy := answers["pool"]
@@ -248,31 +215,18 @@ func applyToPool(cmd *cobra.Command, args []string) {
 
 // check the application of the node
 func checkPoolApp(cmd *cobra.Command, args []string) {
-	// build question
-	var qs = []*survey.Question{
-		{
-			Name:   "pool",
-			Prompt: &survey.Input{Message: "Pool Address: "},
-			Validate: func(val interface{}) error {
-				re := regexp.MustCompile("^0x[a-fA-F0-9]{40}$") // regex for email
-				if val.(string) == "" {
-					return errors.New("This is a required field")
-				} else if !re.MatchString(val.(string)) {
-					return errors.New("Please enter a valid ethereum address")
-				} else {
-					return nil
-				}
-			},
-		},
-	}
-
-	// the answers will be written to this struct
+	// user data passed in
 	answers := make(map[string]interface{})
 
-	// perform the questions
-	err := survey.Ask(qs, &answers)
-	if err != nil {
-		return
+	// only accept 1 arg1: pool
+	for index, arg := range args {
+		if index >= 1 {
+			break
+		}
+		switch index {
+		case 0:
+			answers["pool"] = arg
+		}
 	}
 
 	poolAddy := answers["pool"]
@@ -292,7 +246,6 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 
 // start or stop the node daemon
 func network(cmd *cobra.Command, args []string) {
-
 	if len(args) == 0 {
 		fmt.Println("Please use: \ngladius node start\ngladius node stop\ngladius node status")
 		return
@@ -425,6 +378,32 @@ func marketCommands(cmd *cobra.Command, args []string) {
 	}
 }
 
+// print users wallet address
+func account(cmd *cobra.Command, args []string) {
+	accounts, err := keystore.GetAccounts()
+	if err != nil {
+		fmt.Println("No accounts found. Create a wallet with: gladius create")
+		return
+	}
+	wallet := accounts[0].(map[string]interface{})
+	userAddress := wallet["address"].(string)
+	fmt.Println(userAddress)
+}
+
+// test function
+func test(cmd *cobra.Command, args []string) {
+	// for _, arg := range args {
+	// 	fmt.Println(arg)
+	// }
+	for index, arg := range args {
+		if index >= 2 {
+			break
+		} else {
+			fmt.Printf("%d %v \n", index, arg)
+		}
+	}
+}
+
 func init() {
 	surveyCore.QuestionIcon = "[Gladius]"
 	rootCmd.AddCommand(cmdCreate)
@@ -434,4 +413,6 @@ func init() {
 	rootCmd.AddCommand(cmdProfile)
 	rootCmd.AddCommand(cmdPool)
 	rootCmd.AddCommand(cmdMarket)
+	rootCmd.AddCommand(cmdAccount)
+	rootCmd.AddCommand(cmdTest)
 }
