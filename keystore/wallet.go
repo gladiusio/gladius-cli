@@ -14,11 +14,8 @@ func CreateWallet() error {
 	url := "http://localhost:3001/api/keystore/wallet/create"
 
 	// make a new passphrase for this wallet
-	password := utils.NewPassphrase()
 	pass := make(map[string]string)
-	pass["passphrase"] = password
-
-	utils.CachePassphrase(password)
+	pass["passphrase"] = ""
 
 	res, err := utils.SendRequest("POST", url, pass)
 	if err != nil {

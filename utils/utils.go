@@ -54,17 +54,7 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 	req.Header.Set("User-Agent", "gladius-cli")
 	req.Header.Set("Content-Type", "application/json")
 
-	// if you're writing then ask for password
-	if strings.Compare(requestType, "GET") != 0 {
-		// if the password is cached then use it
-		if strings.Compare(cachedPassphrase, "") != 0 {
-			req.Header.Set("X-Authorization", cachedPassphrase)
-		} else { //else ask
-			password := AskPassphrase()
-			cachedPassphrase = password
-			req.Header.Set("X-Authorization", password)
-		}
-	}
+	req.Header.Set("X-Authorization", "")
 
 	// Send the request via a client
 	res, err := client.Do(req)
