@@ -7,6 +7,7 @@ import (
 
 	"github.com/gladiusio/gladius-cli/keystore"
 	"github.com/gladiusio/gladius-cli/node"
+	"github.com/gladiusio/gladius-cli/pool"
 	"github.com/gladiusio/gladius-cli/utils"
 	"github.com/mgutz/ansi"
 	"github.com/spf13/cobra"
@@ -48,6 +49,20 @@ var cmdProfile = &cobra.Command{
 	Short: "See your profile information",
 	Long:  "Display current users profile information",
 	Run:   profile,
+}
+
+var cmdPool = &cobra.Command{
+	Use:   "pool [applications]",
+	Short: "Test",
+	Long:  "Test",
+	Run:   poolCommands,
+}
+
+var cmdMarket = &cobra.Command{
+	Use:   "pools [owned]",
+	Short: "Test",
+	Long:  "Test",
+	Run:   marketCommands,
 }
 
 // var cmdTest = &cobra.Command{
@@ -347,6 +362,69 @@ func profile(cmd *cobra.Command, args []string) {
 	terminal.Println(ansi.Color("Node IP:", "83+hb"), ansi.Color(data["ip"].(string), "255+hb"))
 }
 
+func poolCommands(cmd *cobra.Command, args []string) {
+
+	if len(args) == 0 {
+		fmt.Println("Please use: \ngladius pool")
+		return
+	}
+
+	poolAddress := args[0]
+	switch args[1] {
+	case "applications":
+		poolAddresses, err := pool.GetApplications(poolAddress, args[2])
+
+		if err != nil {
+			fmt.Println("Error retrieving Pools")
+		} else {
+			for _, address := range poolAddresses {
+				terminal.Println(ansi.Color("Node Address:\t", "83+hb"), ansi.Color(address, "255+hb"))
+			}
+		}
+	case "status":
+		txHash, err := pool.SetStatus(poolAddress, args[2], args[3])
+		terminal.Println(ansi.Color("Node status updated", "83+hb"))
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		// wait for data tx to finish
+		_, err = utils.WaitForTx(txHash)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+	default:
+		terminal.Println("\nUse", ansi.Color("gladius node -h", "83+hb"), "for help")
+	}
+}
+
+func marketCommands(cmd *cobra.Command, args []string) {
+
+	if len(args) == 0 {
+		fmt.Println("Please use: \ngladius pools owned")
+		return
+	}
+
+	switch args[0] {
+	case "owned":
+		poolAddresses, err := pool.GetOwnedPools()
+
+		if err != nil {
+			fmt.Println("Error retrieving Pools")
+		} else {
+			for _, address := range poolAddresses {
+				terminal.Println(ansi.Color("Pool:\t", "83+hb"), ansi.Color(address, "255+hb"))
+			}
+		}
+	default:
+		terminal.Println("\nUse", ansi.Color("gladius node -h", "83+hb"), "for help")
+	}
+}
+
 func init() {
 	surveyCore.QuestionIcon = "[Gladius]"
 	rootCmd.AddCommand(cmdCreate)
@@ -354,4 +432,6 @@ func init() {
 	rootCmd.AddCommand(cmdCheck)
 	rootCmd.AddCommand(cmdNetwork)
 	rootCmd.AddCommand(cmdProfile)
+	rootCmd.AddCommand(cmdPool)
+	rootCmd.AddCommand(cmdMarket)
 }
