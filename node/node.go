@@ -7,10 +7,6 @@ import (
 	"github.com/powerman/rpc-codec/jsonrpc2"
 )
 
-// Test - random test function
-func Test() {
-}
-
 // CreateNode - create a Node contract
 func CreateNode() (string, error) {
 	url := "http://localhost:3001/api/node/create"
