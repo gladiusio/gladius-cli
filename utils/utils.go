@@ -172,11 +172,16 @@ func ControlDaemonHandler(_res []byte) (APIResponse, error) {
 
 // GetIP - Retrieve the current machine's external IP address
 func GetIP() (string, error) {
-	res, err := SendRequest("GET", "http://ipv4.myexternalip.com/raw", nil)
-	if err != nil {
-		return "", fmt.Errorf("%v:utils.GetIP", err)
+
+	sites := [4]string{"https://ipv4.myexternalip.com/raw", "https://api.ipify.org/?format=text", "https://ident.me/", "https://ipv4bot.whatismyipaddress.com"}
+
+	for _, site := range sites {
+		res, err := SendRequest("GET", site, nil)
+		if err == nil {
+			return res, nil
+		}
 	}
-	return res, nil
+	return "", fmt.Errorf("%s:utils.GetIP", "Something went wrong getting this machines IP address")
 }
 
 // NewPassphrase - make a new password and confirm
