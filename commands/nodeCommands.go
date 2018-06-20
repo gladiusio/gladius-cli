@@ -2,7 +2,7 @@ package commands
 
 import (
 	"fmt"
-	"net"
+	"os"
 	"strings"
 
 	"github.com/gladiusio/gladius-cli/keystore"
@@ -116,12 +116,7 @@ func createNewNode(cmd *cobra.Command, args []string) {
 	keystore.CreatePGP(answers)
 
 	// get ip of current machine
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		panic(err)
-	}
-	// everything before the query
-	ip := strings.Split(addrs[4].String(), "/")[0]
+	ip := os.Getenv("GLADIUS.HOSTIP")
 
 	answers["ip"] = ip
 
