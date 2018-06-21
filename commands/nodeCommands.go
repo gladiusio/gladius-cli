@@ -98,24 +98,61 @@ func createNewNode(cmd *cobra.Command, args []string) {
 		},
 	}
 
+	// get ip address and if sites are down then make user enter manually
+	ipSuccess := false
+	ip, err := utils.GetIP()
+	if err != nil {
+		fmt.Println(err)
+		qs = []*survey.Question{
+			{
+				Name:      "name",
+				Prompt:    &survey.Input{Message: "What is your name?"},
+				Validate:  survey.Required,
+				Transform: survey.Title,
+			},
+			{
+				Name:   "email",
+				Prompt: &survey.Input{Message: "What is your email?"},
+				Validate: func(val interface{}) error {
+					re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$") // regex for email
+					if val.(string) == "" {
+						return errors.New("This is a required field")
+					} else if !re.MatchString(val.(string)) {
+						return errors.New("Please enter a valid email address")
+					} else {
+						return nil
+					}
+				},
+			},
+			{
+				Name:      "ip",
+				Prompt:    &survey.Input{Message: "What is your ip address?"},
+				Validate:  survey.Required,
+				Transform: survey.Title,
+			},
+		}
+	}
+
 	// the answers will be written to this struct
 	answers := make(map[string]interface{})
 
 	// perform the questions
-	err := survey.Ask(qs, &answers)
+	err = survey.Ask(qs, &answers)
 	if err != nil {
 		return
 	}
 
 	// gen a new pgp key for this contract
-	keystore.CreatePGP(answers)
-
-	// get ip of current machine
-	ip, err := utils.GetIP()
+	_, err = keystore.CreatePGP(answers)
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
-	answers["ip"] = ip
+
+	if !ipSuccess {
+		answers["ip"] = ip
+	}
+
 	answers["status"] = "active"
 
 	// create the node
@@ -346,6 +383,14 @@ func profile(cmd *cobra.Command, args []string) {
 	terminal.Println(ansi.Color("Node Email:", "83+hb"), ansi.Color(data["email"].(string), "255+hb"))
 	terminal.Println(ansi.Color("Node IP:", "83+hb"), ansi.Color(data["ip"].(string), "255+hb"))
 }
+
+// func test(cmd *cobra.Command, args []string) {
+// 	ip, err := utils.GetIP()
+// 	if err != nil {
+// 		fmt.Println(err)
+// 	}
+// 	println(ip)
+// }
 
 func init() {
 	surveyCore.QuestionIcon = "[Gladius]"
