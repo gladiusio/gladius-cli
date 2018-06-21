@@ -50,12 +50,12 @@ var cmdProfile = &cobra.Command{
 	Run:   profile,
 }
 
-var cmdTest = &cobra.Command{
-	Use:   "test",
-	Short: "Test function",
-	Long:  "Have something to test but dont want to ruin everything else? Put it in this command!",
-	Run:   test,
-}
+// var cmdTest = &cobra.Command{
+// 	Use:   "test",
+// 	Short: "Test function",
+// 	Long:  "Have something to test but dont want to ruin everything else? Put it in this command!",
+// 	Run:   test,
+// }
 
 // collect user info, create node, set node data
 func createNewNode(cmd *cobra.Command, args []string) {
@@ -384,13 +384,13 @@ func profile(cmd *cobra.Command, args []string) {
 	terminal.Println(ansi.Color("Node IP:", "83+hb"), ansi.Color(data["ip"].(string), "255+hb"))
 }
 
-func test(cmd *cobra.Command, args []string) {
-	ip, err := utils.GetIP()
-	if err != nil {
-		fmt.Println(err)
-	}
-	println(ip)
-}
+// func test(cmd *cobra.Command, args []string) {
+// 	ip, err := utils.GetIP()
+// 	if err != nil {
+// 		fmt.Println(err)
+// 	}
+// 	println(ip)
+// }
 
 func init() {
 	surveyCore.QuestionIcon = "[Gladius]"
@@ -399,5 +399,4 @@ func init() {
 	rootCmd.AddCommand(cmdCheck)
 	rootCmd.AddCommand(cmdNetwork)
 	rootCmd.AddCommand(cmdProfile)
-	rootCmd.AddCommand(cmdTest)
 }
