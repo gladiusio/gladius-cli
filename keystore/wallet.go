@@ -9,11 +9,11 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-// CreateWallet - create a new wallet with passphrase
-func CreateWallet() error {
-	url := "http://localhost:3001/api/keystore/wallet/create"
+// CreateAccount - create a new account with passphrase
+func CreateAccount() error {
+	url := "http://localhost:3001/api/keystore/account/create"
 
-	// make a new passphrase for this wallet
+	// make a new passphrase for this account
 	password := utils.NewPassphrase()
 	pass := make(map[string]string)
 	pass["passphrase"] = password
@@ -22,26 +22,26 @@ func CreateWallet() error {
 
 	res, err := utils.SendRequest("POST", url, pass)
 	if err != nil {
-		return fmt.Errorf("%v/keystore.CreateWallet", err)
+		return fmt.Errorf("%v/keystore.CreateAccount", err)
 	}
 
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return fmt.Errorf("%v/keystore.CreateWallet", err)
+		return fmt.Errorf("%v/keystore.CreateAccount", err)
 	}
 
 	response := api.Response.(map[string]interface{})
 	address := response["address"].(string)
 
 	fmt.Println()
-	terminal.Println(ansi.Color("Wallet Address:", "83+hb"), ansi.Color(address, "255+hb"))
+	terminal.Println(ansi.Color("Account Address:", "83+hb"), ansi.Color(address, "255+hb"))
 
 	return nil
 }
 
 // GetAccounts - get accounts at the standard config path
 func GetAccounts() ([]interface{}, error) {
-	url := "http://localhost:3001/api/keystore/wallets"
+	url := "http://localhost:3001/api/keystore/account"
 
 	res, err := utils.SendRequest("GET", url, nil)
 	if err != nil {
@@ -56,13 +56,13 @@ func GetAccounts() ([]interface{}, error) {
 	response := api.Response.([]interface{})
 
 	if len(response) < 1 {
-		return nil, errors.New("No accounts found. Please create a wallet with: gladius create")
+		return nil, errors.New("No accounts found. Please create an account with: gladius create")
 	}
 
 	return response, nil
 }
 
-// EnsureAccount - Make sure they have a wallet
+// EnsureAccount - Make sure they have an account
 func EnsureAccount() (bool, error) {
 	_, err := GetAccounts()
 	if err != nil {

@@ -59,16 +59,16 @@ var cmdProfile = &cobra.Command{
 
 // collect user info, create node, set node data
 func createNewNode(cmd *cobra.Command, args []string) {
-	// make sure they have a wallet, if they dont, make one
-	wallet, _ := keystore.EnsureAccount()
-	if !wallet {
-		err := keystore.CreateWallet()
+	// make sure they have a account, if they dont, make one
+	account, _ := keystore.EnsureAccount()
+	if !account {
+		err := keystore.CreateAccount()
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 		fmt.Println()
-		terminal.Println(ansi.Color("Please add test ether to your new wallet from a ropsten faucet", "255+hb"))
+		terminal.Println(ansi.Color("Please add test ether to your new account from a ropsten faucet", "255+hb"))
 		fmt.Println()
 		terminal.Println(ansi.Color("Run", "255+hb"), ansi.Color("gladius create", "83+hb"), ansi.Color("again after you've acquired your test ether", "255+hb"))
 		return
@@ -202,15 +202,15 @@ func createNewNode(cmd *cobra.Command, args []string) {
 
 // send data to pool
 func applyToPool(cmd *cobra.Command, args []string) {
-	// make sure they have a wallet, if they dont, make one
-	wallet, _ := keystore.EnsureAccount()
-	if !wallet {
-		err := keystore.CreateWallet()
+	// make sure they have a account, if they dont, make one
+	account, _ := keystore.EnsureAccount()
+	if !account {
+		err := keystore.CreateAccount()
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		fmt.Println("Please add test ether to your new wallet from a ropsten faucet")
+		fmt.Println("Please add test ether to your new account from a ropsten faucet")
 		return
 	}
 
@@ -359,11 +359,11 @@ func network(cmd *cobra.Command, args []string) {
 func profile(cmd *cobra.Command, args []string) {
 	accounts, err := keystore.GetAccounts()
 	if err != nil {
-		fmt.Println("No accounts found. Create a wallet with: gladius create")
+		fmt.Println("No accounts found. Create a account with: gladius create")
 		return
 	}
-	wallet := accounts[0].(map[string]interface{})
-	userAddress := wallet["address"].(string)
+	account := accounts[0].(map[string]interface{})
+	userAddress := account["address"].(string)
 	fmt.Println()
 	terminal.Println(ansi.Color("Account Address:", "83+hb"), ansi.Color(userAddress, "255+hb"))
 
