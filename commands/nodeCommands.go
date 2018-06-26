@@ -9,11 +9,15 @@ import (
 	"github.com/gladiusio/gladius-cli/node"
 	"github.com/gladiusio/gladius-cli/utils"
 	"github.com/mgutz/ansi"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	surveyCore "gopkg.in/AlecAivazis/survey.v1/core"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
+
+var debug bool
+var source string
 
 var cmdCreate = &cobra.Command{
 	Use:   "create",
@@ -50,23 +54,24 @@ var cmdProfile = &cobra.Command{
 	Run:   profile,
 }
 
-// var cmdTest = &cobra.Command{
-// 	Use:   "test",
-// 	Short: "Test function",
-// 	Long:  "Have something to test but dont want to ruin everything else? Put it in this command!",
-// 	Run:   test,
-// }
+var cmdTest = &cobra.Command{
+	Use:   "test",
+	Short: "Test function",
+	Long:  "Have something to test but dont want to ruin everything else? Put it in this command!",
+	Run:   test,
+}
 
 // collect user info, create node, set node data
 func createNewNode(cmd *cobra.Command, args []string) {
 	// make sure they have a account, if they dont, make one
 	account, _ := keystore.EnsureAccount()
 	if !account {
+		log.Warning("No account found")
 		err := keystore.CreateAccount()
 		if err != nil {
-			fmt.Println(err)
-			return
+			log.Fatal(err)
 		}
+		log.Info("New account created")
 		fmt.Println()
 		terminal.Println(ansi.Color("Please add test ether to your new account from a ropsten faucet", "255+hb"))
 		fmt.Println()
@@ -88,8 +93,10 @@ func createNewNode(cmd *cobra.Command, args []string) {
 			Validate: func(val interface{}) error {
 				re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$") // regex for email
 				if val.(string) == "" {
+					log.Warning("Empty value")
 					return errors.New("This is a required field")
 				} else if !re.MatchString(val.(string)) {
+					log.Warning("Invalid Email")
 					return errors.New("Please enter a valid email address")
 				} else {
 					return nil
@@ -102,7 +109,7 @@ func createNewNode(cmd *cobra.Command, args []string) {
 	ipSuccess := false
 	ip, err := utils.GetIP()
 	if err != nil {
-		fmt.Println(err)
+		log.Warning(err)
 		qs = []*survey.Question{
 			{
 				Name:      "name",
@@ -116,8 +123,10 @@ func createNewNode(cmd *cobra.Command, args []string) {
 				Validate: func(val interface{}) error {
 					re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$") // regex for email
 					if val.(string) == "" {
+						log.Warning("Empty value")
 						return errors.New("This is a required field")
 					} else if !re.MatchString(val.(string)) {
+						log.Warning("Invalid email")
 						return errors.New("Please enter a valid email address")
 					} else {
 						return nil
@@ -139,15 +148,15 @@ func createNewNode(cmd *cobra.Command, args []string) {
 	// perform the questions
 	err = survey.Ask(qs, &answers)
 	if err != nil {
-		return
+		log.Fatal(err)
 	}
 
 	// gen a new pgp key for this contract
 	_, err = keystore.CreatePGP(answers)
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatal(err)
 	}
+	log.Info("PGP key created")
 
 	if !ipSuccess {
 		answers["ip"] = ip
@@ -158,39 +167,38 @@ func createNewNode(cmd *cobra.Command, args []string) {
 	// create the node
 	tx, err := node.CreateNode()
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatal(err)
 	}
 
 	// wait for the node tx to finish
 	_, err = utils.WaitForTx(tx)
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatal(err)
 	}
 
 	// save the node address
 	nodeAddress, err := node.GetNodeAddress()
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatal(err)
 	}
 
+	log.Info("Node smart contract created")
 	terminal.Println(ansi.Color("Node created!", "83+hb"))
 
 	// set node data
 	tx, err = node.SetNodeData(nodeAddress, answers)
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatal("err")
 	}
 
 	// wait for data tx to finish
 	_, err = utils.WaitForTx(tx)
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatal(err)
 	}
+
+	log.Info("Node data set")
+	log.Info("Node fully created")
 
 	terminal.Println(ansi.Color("Node data set!", "83+hb"))
 
@@ -205,10 +213,10 @@ func applyToPool(cmd *cobra.Command, args []string) {
 	// make sure they have a account, if they dont, make one
 	account, _ := keystore.EnsureAccount()
 	if !account {
+		log.Warning("No account found")
 		err := keystore.CreateAccount()
 		if err != nil {
-			fmt.Println(err)
-			return
+			log.Fatal(err)
 		}
 		fmt.Println("Please add test ether to your new account from a ropsten faucet")
 		return
@@ -222,8 +230,10 @@ func applyToPool(cmd *cobra.Command, args []string) {
 			Validate: func(val interface{}) error {
 				re := regexp.MustCompile("^0x[a-fA-F0-9]{40}$") // regex for email
 				if val.(string) == "" {
+					log.Warning("Empty value")
 					return errors.New("This is a required field")
 				} else if !re.MatchString(val.(string)) {
+					log.Warning("Invalid email")
 					return errors.New("Please enter a valid ethereum address")
 				} else {
 					return nil
@@ -384,19 +394,28 @@ func profile(cmd *cobra.Command, args []string) {
 	terminal.Println(ansi.Color("Node IP:", "83+hb"), ansi.Color(data["ip"].(string), "255+hb"))
 }
 
-// func test(cmd *cobra.Command, args []string) {
-// 	ip, err := utils.GetIP()
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// 	println(ip)
-// }
+func test(cmd *cobra.Command, args []string) {
+	log.SetLevel(log.WarnLevel)
+	log.Debug("Useful debugging information.")
+	log.Info("Something noteworthy happened!")
+	log.Warn("You should probably take a look at this.")
+	log.Error("Something failed but I'm not quitting.")
+	log.Fatal("Fatal error")
+}
 
 func init() {
 	surveyCore.QuestionIcon = "[Gladius]"
+
+	// register all commands
 	rootCmd.AddCommand(cmdCreate)
 	rootCmd.AddCommand(cmdApply)
 	rootCmd.AddCommand(cmdCheck)
 	rootCmd.AddCommand(cmdNetwork)
 	rootCmd.AddCommand(cmdProfile)
+	rootCmd.AddCommand(cmdTest)
+
+	//register all flags
+	cmdTest.Flags().StringVarP(&source, "source", "s", "", "Source directory to read from")
+	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug mode")
+
 }

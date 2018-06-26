@@ -56,7 +56,7 @@ func GetAccounts() ([]interface{}, error) {
 	response := api.Response.([]interface{})
 
 	if len(response) < 1 {
-		return nil, errors.New("No accounts found. Please create an account with: gladius create")
+		return nil, errors.New("No accounts found/keystore.GetAccounts")
 	}
 
 	return response, nil

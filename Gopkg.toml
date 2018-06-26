@@ -44,3 +44,7 @@
   branch = "master"
   name = "github.com/mgutz/ansi"
 
+
+[[constraint]]
+  name = "github.com/sirupsen/logrus"
+  version = "1.0.5"
