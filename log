@@ -1,0 +1,6 @@
+time="2018-06-27T13:57:45-04:00" level=info msg="PGP key created"
+time="2018-06-27T13:57:45-04:00" level=info msg="Creating Node"
+time="2018-06-27T14:01:25-04:00" level=info msg="Node created"
+time="2018-06-27T14:01:25-04:00" level=info msg="Setting Node data"
+time="2018-06-27T14:02:20-04:00" level=info msg="Node data set"
+time="2018-06-27T14:02:20-04:00" level=info msg="Node fully created"

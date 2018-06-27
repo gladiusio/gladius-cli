@@ -40,26 +40,26 @@ func CreateAccount() error {
 }
 
 // GetAccounts - get accounts at the standard config path
-func GetAccounts() ([]interface{}, error) {
+func GetAccounts() (string, error) {
 	url := "http://localhost:3001/api/keystore/account"
 
 	res, err := utils.SendRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("%v/keystore.GetAccounts", err)
+		return "", fmt.Errorf("%v/keystore.GetAccounts", err)
 	}
 
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return nil, fmt.Errorf("%v/keystore.GetAccounts", err)
+		return "", fmt.Errorf("%v/keystore.GetAccounts", err)
 	}
 
-	response := api.Response.([]interface{})
+	response := api.Response.(map[string]interface{})
 
 	if len(response) < 1 {
-		return nil, errors.New("No accounts found/keystore.GetAccounts")
+		return "", errors.New("No accounts found/keystore.GetAccounts")
 	}
 
-	return response, nil
+	return response["address"].(string), nil
 }
 
 // EnsureAccount - Make sure they have an account

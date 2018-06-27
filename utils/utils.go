@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
-	"github.com/BurntSushi/toml"
+	log "github.com/sirupsen/logrus"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
@@ -221,60 +222,25 @@ func CachePassphrase(passphrase string) {
 	cachedPassphrase = passphrase
 }
 
-// ############ DEPRECATED ############
+// OpenLogger - opens the file so the logger can write to it
+func OpenLogger(level int) (*os.File, error) {
 
-// GetEnvMap - custom function to return a mapping of the environment file (has to be .toml)
-// this technically works but reading from *.toml is deprecated
-func GetEnvMap(filename string) (map[string]map[string]string, error) {
-	// read env file
-	b, err := ioutil.ReadFile(filename)
+	switch level {
+	case 1:
+		log.SetLevel(log.DebugLevel)
+	case 2:
+		log.SetLevel(log.WarnLevel)
+	default:
+		log.SetLevel(log.FatalLevel)
+	}
+
+	file, err := os.OpenFile("log", os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
-		fmt.Println("Error reading: " + filename)
+		log.Warning("Failed to log to file, using default stderr")
 		return nil, err
 	}
 
-	// decode the file and put it into envFile
-	var envFile = make(map[string]map[string]string)
+	log.SetOutput(file)
 
-	if _, err := toml.Decode(string(b), &envFile); err != nil {
-		fmt.Println("Error decoding")
-		return nil, err
-	}
-
-	return envFile, nil
-}
-
-// WriteToEnv - custom function to return a mapping of the environment file (has to be .toml)
-// this technically works but writing to *.toml is deprecated
-func WriteToEnv(section, key, value, source, destination string) error {
-	// read the file
-	b, err := ioutil.ReadFile(source)
-	if err != nil {
-		fmt.Println("Error reading: " + source)
-		return err
-	}
-
-	// decode and put it into the mapping
-	var envFile = make(map[string]map[string]string)
-	if _, err = toml.Decode(string(b), &envFile); err != nil {
-		fmt.Println("Error decoding")
-	}
-
-	// add a new {key : value} pair
-	envFile[section][key] = value
-
-	// re-encode the mapping
-	buf := new(bytes.Buffer)
-	if err = toml.NewEncoder(buf).Encode(envFile); err != nil {
-		fmt.Println("Error encoding")
-		return err
-	}
-
-	// re-write the file
-	if err = ioutil.WriteFile(destination, (*buf).Bytes(), 0644); err != nil {
-		fmt.Println("Error writing to file")
-		return err
-	}
-
-	return nil
+	return file, nil
 }

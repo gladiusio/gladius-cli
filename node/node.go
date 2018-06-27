@@ -46,7 +46,8 @@ func GetNodeAddress() (string, error) {
 		return "", fmt.Errorf("%v/node.GetNodeAddress", err)
 	}
 
-	address := api.Response.(string)
+	response := api.Response.(map[string]interface{})
+	address := response["address"].(string)
 
 	return address, nil //node address
 }
