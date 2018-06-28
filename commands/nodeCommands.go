@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"os"
 	"regexp"
 
 	"github.com/gladiusio/gladius-cli/keystore"
@@ -18,6 +19,12 @@ import (
 
 var debug bool
 var source string
+
+// File -
+var File *os.File
+
+// Level - Determines the severity of the output logs (1 = debug and above (default), 2 = warnings and above, 3 = fatal)
+var Level = 1
 
 var cmdCreate = &cobra.Command{
 	Use:   "create",
@@ -63,22 +70,18 @@ var cmdTest = &cobra.Command{
 
 // collect user info, create node, set node data
 func createNewNode(cmd *cobra.Command, args []string) {
-
-	file, err := utils.OpenLogger(1)
-	if err == nil {
-		defer file.Close()
-	}
+	defer File.Close()
 
 	// make sure they have a account, if they dont, make one
 	account, _ := keystore.EnsureAccount()
 	if !account {
-		log.Warning("No account found")
-		err = keystore.CreateAccount()
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Warning("No account found")
+		err := keystore.CreateAccount()
 		if err != nil {
 			fmt.Println(err)
-			log.Fatal(err)
+			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Fatal(err)
 		}
-		log.Info("Account created")
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("Account created")
 		fmt.Println()
 		terminal.Println(ansi.Color("Please add test ether to your new account from a ropsten faucet", "255+hb"))
 		fmt.Println()
@@ -100,10 +103,10 @@ func createNewNode(cmd *cobra.Command, args []string) {
 			Validate: func(val interface{}) error {
 				re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$") // regex for email
 				if val.(string) == "" {
-					log.Warning("Empty value")
+					log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Warning("Empty value")
 					return errors.New("This is a required field")
 				} else if !re.MatchString(val.(string)) {
-					log.Warning("Invalid Email")
+					log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Warning("Invalid Email")
 					return errors.New("Please enter a valid email address")
 				} else {
 					return nil
@@ -116,7 +119,7 @@ func createNewNode(cmd *cobra.Command, args []string) {
 	ipSuccess := false
 	ip, err := utils.GetIP()
 	if err != nil {
-		log.Warning(err)
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Warning(err)
 		qs = []*survey.Question{
 			{
 				Name:      "name",
@@ -130,10 +133,10 @@ func createNewNode(cmd *cobra.Command, args []string) {
 				Validate: func(val interface{}) error {
 					re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$") // regex for email
 					if val.(string) == "" {
-						log.Warning("Empty value")
+						log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Warning("Empty value")
 						return errors.New("This is a required field")
 					} else if !re.MatchString(val.(string)) {
-						log.Warning("Invalid email")
+						log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Warning("Invalid email")
 						return errors.New("Please enter a valid email address")
 					} else {
 						return nil
@@ -156,16 +159,16 @@ func createNewNode(cmd *cobra.Command, args []string) {
 	err = survey.Ask(qs, &answers)
 	if err != nil {
 		fmt.Println(err)
-		log.Fatal(err)
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Fatal(err)
 	}
 
 	// gen a new pgp key for this contract
 	_, err = keystore.CreatePGP(answers)
 	if err != nil {
 		fmt.Println(err)
-		log.Fatal(err)
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Fatal(err)
 	}
-	log.Info("PGP key created")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("PGP key created")
 
 	if !ipSuccess {
 		answers["ip"] = ip
@@ -173,19 +176,19 @@ func createNewNode(cmd *cobra.Command, args []string) {
 
 	answers["status"] = "active"
 
-	log.Info("Creating Node")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("Creating Node")
 	// create the node
 	tx, err := node.CreateNode()
 	if err != nil {
 		fmt.Println(err)
-		log.Fatal(err)
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Fatal(err)
 	}
 
 	// wait for the node tx to finish
 	_, err = utils.WaitForTx(tx)
 	if err != nil {
 		fmt.Println(err)
-		log.Fatal(err)
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Fatal(err)
 	}
 
 	// save the node address
@@ -193,29 +196,29 @@ func createNewNode(cmd *cobra.Command, args []string) {
 	if err != nil {
 		fmt.Println("HEY, OVER HERE!")
 		fmt.Println(err)
-		log.Fatal(err)
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Fatal(err)
 	}
 
-	log.Info("Node created")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("Node created")
 	terminal.Println(ansi.Color("Node created!", "83+hb"))
-	log.Info("Setting Node data")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("Setting Node data")
 
 	// set node data
 	tx, err = node.SetNodeData(nodeAddress, answers)
 	if err != nil {
 		fmt.Println(err)
-		log.Fatal("err")
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Fatal("err")
 	}
 
 	// wait for data tx to finish
 	_, err = utils.WaitForTx(tx)
 	if err != nil {
 		fmt.Println(err)
-		log.Fatal(err)
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Fatal(err)
 	}
 
-	log.Info("Node data set")
-	log.Info("Node fully created")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("Node data set")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("Node fully created")
 
 	terminal.Println(ansi.Color("Node data set!", "83+hb"))
 
@@ -227,22 +230,18 @@ func createNewNode(cmd *cobra.Command, args []string) {
 
 // send data to pool
 func applyToPool(cmd *cobra.Command, args []string) {
-
-	file, err := utils.OpenLogger(1)
-	if err == nil {
-		defer file.Close()
-	}
+	defer File.Close()
 
 	// make sure they have a account, if they dont, make one
 	account, _ := keystore.EnsureAccount()
 	if !account {
-		log.Warning("No account found")
-		err = keystore.CreateAccount()
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Warning("No account found")
+		err := keystore.CreateAccount()
 		if err != nil {
 			fmt.Println(err)
-			log.Fatal(err)
+			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Fatal(err)
 		}
-		log.Info("Account created")
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Info("Account created")
 		fmt.Println("Please add test ether to your new account from a ropsten faucet")
 		return
 	}
@@ -255,10 +254,10 @@ func applyToPool(cmd *cobra.Command, args []string) {
 			Validate: func(val interface{}) error {
 				re := regexp.MustCompile("^0x[a-fA-F0-9]{40}$") // regex for email
 				if val.(string) == "" {
-					log.Warning("Empty value")
+					log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Warning("Empty value")
 					return errors.New("This is a required field")
 				} else if !re.MatchString(val.(string)) {
-					log.Warning("Invalid email")
+					log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Warning("Invalid email")
 					return errors.New("Please enter a valid ethereum address")
 				} else {
 					return nil
@@ -271,10 +270,10 @@ func applyToPool(cmd *cobra.Command, args []string) {
 	answers := make(map[string]interface{})
 
 	// perform the questions
-	err = survey.Ask(qs, &answers)
+	err := survey.Ask(qs, &answers)
 	if err != nil {
 		fmt.Println(err)
-		log.Fatal(err)
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Fatal(err)
 	}
 
 	poolAddy := answers["pool"]
@@ -283,36 +282,32 @@ func applyToPool(cmd *cobra.Command, args []string) {
 	nodeAddress, err := node.GetNodeAddress()
 	if err != nil {
 		fmt.Println(err)
-		log.Fatal(err)
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Fatal(err)
 	}
 
-	log.Info("Applying to pool")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Info("Applying to pool")
 	// send data to the pool
 	tx, err := node.ApplyToPool(nodeAddress, poolAddy.(string))
 	if err != nil {
 		fmt.Println(err)
-		log.Fatal(err)
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Fatal(err)
 	}
 
 	// wait for the tx to finish
 	_, err = utils.WaitForTx(tx)
 	if err != nil {
 		fmt.Println(err)
-		log.Fatal(err)
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Fatal(err)
 	}
 
-	log.Info("Application transaction successful")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Info("Application transaction successful")
 	fmt.Println("\nApplication sent to pool!")
 	terminal.Println("\nUse", ansi.Color("gladius check", "83+hb"), "to check the status of your application")
 }
 
 // check the application of the node
 func checkPoolApp(cmd *cobra.Command, args []string) {
-
-	file, err := utils.OpenLogger(1)
-	if err == nil {
-		defer file.Close()
-	}
+	defer File.Close()
 
 	// build question
 	var qs = []*survey.Question{
@@ -322,10 +317,10 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 			Validate: func(val interface{}) error {
 				re := regexp.MustCompile("^0x[a-fA-F0-9]{40}$") // regex for email
 				if val.(string) == "" {
-					log.Warning("Empty value")
+					log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "checkPoolApp"}).Warning("Empty value")
 					return errors.New("This is a required field")
 				} else if !re.MatchString(val.(string)) {
-					log.Warning("Invalid ETH address")
+					log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "checkPoolApp"}).Warning("Invalid ETH address")
 					return errors.New("Please enter a valid ethereum address")
 				} else {
 					return nil
@@ -338,10 +333,10 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 	answers := make(map[string]interface{})
 
 	// perform the questions
-	err = survey.Ask(qs, &answers)
+	err := survey.Ask(qs, &answers)
 	if err != nil {
 		fmt.Println(err)
-		log.Fatal(err)
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "checkPoolApp"}).Fatal(err)
 	}
 
 	poolAddy := answers["pool"]
@@ -350,27 +345,23 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 	nodeAddress, err := node.GetNodeAddress()
 	if err != nil {
 		fmt.Println(err)
-		log.Fatal(err)
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "checkPoolApp"}).Fatal(err)
 	}
 
-	log.Info("Checking Application")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "checkPoolApp"}).Info("Checking Application")
 	// check application status
 	status, _ := node.CheckPoolApplication(nodeAddress, poolAddy.(string))
-	log.Info("Application checked")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "checkPoolApp"}).Info("Application checked")
 	fmt.Println("Pool: " + poolAddy.(string) + "\t Status: " + status)
 	terminal.Println("\nUse", ansi.Color("gladius node start", "83+hb"), "to start the node networking software")
 }
 
 // start or stop the node daemon
 func network(cmd *cobra.Command, args []string) {
-
-	file, err := utils.OpenLogger(1)
-	if err == nil {
-		defer file.Close()
-	}
+	defer File.Close()
 
 	if len(args) == 0 {
-		log.Fatal("Please use: \ngladius node start\ngladius node stop\ngladius node status")
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Fatal("Please use: \ngladius node start\ngladius node stop\ngladius node status")
 	}
 
 	switch args[0] {
@@ -378,9 +369,9 @@ func network(cmd *cobra.Command, args []string) {
 		reply, err := node.StartNetworkNode()
 		if err != nil {
 			fmt.Println("Error starting the node networking daemon. Make sure it's running!")
-			log.Fatal(err)
+			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Fatal(err)
 		} else {
-			log.Info("Network daemon started")
+			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Info("Network daemon started")
 			terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
 			terminal.Println("\nUse", ansi.Color("gladius node stop", "83+hb"), "to stop the node networking software")
 			terminal.Println("Use", ansi.Color("gladius node status", "83+hb"), "to check the status of the node networking software")
@@ -389,9 +380,9 @@ func network(cmd *cobra.Command, args []string) {
 		reply, err := node.StopNetworkNode()
 		if err != nil {
 			fmt.Println("Error stopping the node networking daemon. Make sure it's running!")
-			log.Fatal(err)
+			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Fatal(err)
 		} else {
-			log.Info("Network daemon stopped")
+			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Info("Network daemon stopped")
 			terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
 			terminal.Println("\nUse", ansi.Color("gladius node start", "83+hb"), "to start the node networking software")
 			terminal.Println("Use", ansi.Color("gladius node status", "83+hb"), "to check the status of the node networking software")
@@ -400,9 +391,9 @@ func network(cmd *cobra.Command, args []string) {
 		reply, err := node.StatusNetworkNode()
 		if err != nil {
 			fmt.Println("Error communicating with the node networking daemon. Make sure it's running!")
-			log.Fatal(err)
+			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Fatal(err)
 		} else {
-			log.Info("Network daemon status")
+			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Info("Network daemon status")
 			terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
 			terminal.Println("\nUse", ansi.Color("gladius node start", "83+hb"), "to start the node networking software")
 			terminal.Println("Use", ansi.Color("gladius node stop", "83+hb"), "to stop the node networking software")
@@ -411,22 +402,18 @@ func network(cmd *cobra.Command, args []string) {
 		// reply := "command not recognized"
 		// terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
 		terminal.Println("\nUse", ansi.Color("gladius node -h", "83+hb"), "for help")
-		log.Fatal("command not recognized")
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Fatal("command not recognized")
 	}
 }
 
 // get a users profile
 func profile(cmd *cobra.Command, args []string) {
-
-	file, err := utils.OpenLogger(1)
-	if err == nil {
-		defer file.Close()
-	}
+	defer File.Close()
 
 	account, err := keystore.GetAccounts()
 	if err != nil {
 		fmt.Println("No accounts found. Create a account with: gladius create")
-		log.Fatal(err)
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "profile"}).Fatal(err)
 	}
 
 	userAddress := account
@@ -436,7 +423,7 @@ func profile(cmd *cobra.Command, args []string) {
 	address, err := node.GetNodeAddress()
 	if err != nil {
 		fmt.Println("No Node found. Create a node with : gladius create")
-		log.Fatal(err)
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "profile"}).Fatal(err)
 	}
 
 	terminal.Println(ansi.Color("Node Address:", "83+hb"), ansi.Color(address, "255+hb"))
@@ -444,27 +431,30 @@ func profile(cmd *cobra.Command, args []string) {
 	data, err := node.GetNodeData(address)
 	if err != nil {
 		fmt.Println("No Node found. Create a node with : gladius create")
-		log.Fatal(err)
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "profile"}).Fatal(err)
 	}
 
-	log.Info("Node information found")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "profile"}).Info("Node information found")
 	terminal.Println(ansi.Color("Node Name:", "83+hb"), ansi.Color(data["name"].(string), "255+hb"))
 	terminal.Println(ansi.Color("Node Email:", "83+hb"), ansi.Color(data["email"].(string), "255+hb"))
 	terminal.Println(ansi.Color("Node IP:", "83+hb"), ansi.Color(data["ip"].(string), "255+hb"))
 }
 
 func test(cmd *cobra.Command, args []string) {
-	file, err := utils.OpenLogger(1)
-	if err == nil {
-		defer file.Close()
-	}
+	// file, err := utils.OpenLogger(Level)
+	// if err == nil {
+	// 	defer file.Close()
+	// }
 
-	log.Debug("Useful debugging information.")
-	log.Info("Something noteworthy happened!")
-	log.Warn("You should probably take a look at this.")
-	log.Error("Something failed but I'm not quitting.")
-	log.Fatal("Fatal error")
+	defer File.Close()
+
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "test"}).Debug("Useful debugging information.")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "test"}).Info("Something noteworthy happened!")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "test"}).Warn("You should probably take a look at this.")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "test"}).Error("Something failed but I'm not quitting.")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "test"}).Fatal("Fatal error")
 	fmt.Println("FDSFSDFDSFFSFD")
+
 	return
 }
 
@@ -479,19 +469,29 @@ func init() {
 	rootCmd.AddCommand(cmdProfile)
 	rootCmd.AddCommand(cmdTest)
 
-	//register all flags
+	// register all flags
 	cmdTest.Flags().StringVarP(&source, "source", "s", "", "Source directory to read from")
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug mode")
+	rootCmd.PersistentFlags().IntVarP(&Level, "level", "l", 1, "Sets the logging level")
 
-	// // log stuff to this file
-	// f, err := os.OpenFile("testlogfile", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	// if err != nil {
-	// 	log.Fatalf("error opening file: %v", err)
-	// }
-	// defer f.Close()
-	//
-	// log.SetOutput(f)
-	//
-	// log.SetLevel(log.WarnLevel)
+	// set up the logger
+	switch Level {
+	case 1:
+		log.SetLevel(log.DebugLevel)
+	case 2:
+		log.SetLevel(log.WarnLevel)
+	default:
+		log.SetLevel(log.FatalLevel)
+	}
+
+	File, err := os.OpenFile("log", os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Warning("Failed to log to file, using default stderr")
+	}
+
+	log.SetOutput(File)
+
+	// create default logger (include filename and function)
+	// logger := log.WithFields(log.Fields{"file": "nodeCommands.go", "function": "functionName"})
 
 }

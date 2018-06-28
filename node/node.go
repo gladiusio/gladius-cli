@@ -41,6 +41,8 @@ func GetNodeAddress() (string, error) {
 		return "", fmt.Errorf("%v/node.GetNodeAddress", err)
 	}
 
+	println(res)
+
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
 		return "", fmt.Errorf("%v/node.GetNodeAddress", err)
