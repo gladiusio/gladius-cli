@@ -17,14 +17,8 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-var debug bool
-var source string
-
-// File -
-var File *os.File
-
-// Level - Determines the severity of the output logs (1 = debug and above (default), 2 = warnings and above, 3 = fatal)
-var Level = 1
+// LogFile - Where the logs are stored
+var LogFile *os.File
 
 var cmdCreate = &cobra.Command{
 	Use:   "create",
@@ -70,7 +64,8 @@ var cmdTest = &cobra.Command{
 
 // collect user info, create node, set node data
 func createNewNode(cmd *cobra.Command, args []string) {
-	defer File.Close()
+	utils.SetLogLevel(utils.LogLevel)
+	defer LogFile.Close()
 
 	// make sure they have a account, if they dont, make one
 	account, _ := keystore.EnsureAccount()
@@ -230,7 +225,8 @@ func createNewNode(cmd *cobra.Command, args []string) {
 
 // send data to pool
 func applyToPool(cmd *cobra.Command, args []string) {
-	defer File.Close()
+	utils.SetLogLevel(utils.LogLevel)
+	defer LogFile.Close()
 
 	// make sure they have a account, if they dont, make one
 	account, _ := keystore.EnsureAccount()
@@ -307,7 +303,8 @@ func applyToPool(cmd *cobra.Command, args []string) {
 
 // check the application of the node
 func checkPoolApp(cmd *cobra.Command, args []string) {
-	defer File.Close()
+	utils.SetLogLevel(utils.LogLevel)
+	defer LogFile.Close()
 
 	// build question
 	var qs = []*survey.Question{
@@ -358,7 +355,8 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 
 // start or stop the node daemon
 func network(cmd *cobra.Command, args []string) {
-	defer File.Close()
+	utils.SetLogLevel(utils.LogLevel)
+	defer LogFile.Close()
 
 	if len(args) == 0 {
 		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Fatal("Please use: \ngladius node start\ngladius node stop\ngladius node status")
@@ -408,7 +406,8 @@ func network(cmd *cobra.Command, args []string) {
 
 // get a users profile
 func profile(cmd *cobra.Command, args []string) {
-	defer File.Close()
+	utils.SetLogLevel(utils.LogLevel)
+	defer LogFile.Close()
 
 	account, err := keystore.GetAccounts()
 	if err != nil {
@@ -441,12 +440,8 @@ func profile(cmd *cobra.Command, args []string) {
 }
 
 func test(cmd *cobra.Command, args []string) {
-	// file, err := utils.OpenLogger(Level)
-	// if err == nil {
-	// 	defer file.Close()
-	// }
-
-	defer File.Close()
+	utils.SetLogLevel(utils.LogLevel)
+	defer LogFile.Close()
 
 	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "test"}).Debug("Useful debugging information.")
 	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "test"}).Info("Something noteworthy happened!")
@@ -454,7 +449,6 @@ func test(cmd *cobra.Command, args []string) {
 	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "test"}).Error("Something failed but I'm not quitting.")
 	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "test"}).Fatal("Fatal error")
 	fmt.Println("FDSFSDFDSFFSFD")
-
 	return
 }
 
@@ -470,28 +464,20 @@ func init() {
 	rootCmd.AddCommand(cmdTest)
 
 	// register all flags
-	cmdTest.Flags().StringVarP(&source, "source", "s", "", "Source directory to read from")
-	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug mode")
-	rootCmd.PersistentFlags().IntVarP(&Level, "level", "l", 1, "Sets the logging level")
+	// cmdTest.Flags().StringVarP(&source, "source", "s", "", "Source directory to read from")
+	// rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug mode")
+	rootCmd.PersistentFlags().IntVarP(&utils.LogLevel, "level", "l", 1, "Sets the logging level")
 
-	// set up the logger
-	switch Level {
-	case 1:
-		log.SetLevel(log.DebugLevel)
-	case 2:
-		log.SetLevel(log.WarnLevel)
-	default:
-		log.SetLevel(log.FatalLevel)
-	}
+	// clear previous log file
+	utils.ClearLogger()
 
-	File, err := os.OpenFile("log", os.O_CREATE|os.O_WRONLY, 0666)
+	LogFile, err := os.OpenFile("log", os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Warning("Failed to log to file, using default stderr")
 	}
 
-	log.SetOutput(File)
+	log.SetOutput(LogFile)
 
 	// create default logger (include filename and function)
 	// logger := log.WithFields(log.Fields{"file": "nodeCommands.go", "function": "functionName"})
-
 }

@@ -14,6 +14,9 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
+// LogLevel - What kind of logs to show (1 = Debug and above, 2 = Info and above, 3 = Warnings and above, 4 = Fatal)
+var LogLevel = 1
+
 // APIResponse - standard response from the control daemon api
 type APIResponse struct {
 	Message  string      `json:"message"`
@@ -222,25 +225,21 @@ func CachePassphrase(passphrase string) {
 	cachedPassphrase = passphrase
 }
 
-// OpenLogger - opens the file so the logger can write to it
-func OpenLogger(level int) (*os.File, error) {
-
+// SetLogLevel -
+func SetLogLevel(level int) {
 	switch level {
 	case 1:
 		log.SetLevel(log.DebugLevel)
 	case 2:
+		log.SetLevel(log.InfoLevel)
+	case 3:
 		log.SetLevel(log.WarnLevel)
 	default:
 		log.SetLevel(log.FatalLevel)
 	}
+}
 
-	file, err := os.OpenFile("log", os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		log.Warning("Failed to log to file, using default stderr")
-		return nil, err
-	}
-
-	log.SetOutput(file)
-
-	return file, nil
+// ClearLogger
+func ClearLogger() {
+	os.Remove("./log")
 }

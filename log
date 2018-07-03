@@ -1,2 +1,3 @@
-time="2018-06-28T15:20:24-04:00" level=info msg="Node information found" file=nodeCommands.go func=profile
-ll/utils.ControlDaemonHandler/node.GetNodeAddress" file=nodeCommands.go func=profile
+time="2018-07-03T10:47:38-04:00" level=warning msg="You should probably take a look at this." file=nodeCommands.go func=test
+time="2018-07-03T10:47:38-04:00" level=error msg="Something failed but I'm not quitting." file=nodeCommands.go func=test
+time="2018-07-03T10:47:38-04:00" level=fatal msg="Fatal error" file=nodeCommands.go func=test
