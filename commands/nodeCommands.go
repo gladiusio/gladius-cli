@@ -179,6 +179,7 @@ func createNewNode(cmd *cobra.Command, args []string) {
 		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Fatal(err)
 	}
 
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("Waiting for TX")
 	// wait for the node tx to finish
 	_, err = utils.WaitForTx(tx)
 	if err != nil {
@@ -289,6 +290,7 @@ func applyToPool(cmd *cobra.Command, args []string) {
 		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Fatal(err)
 	}
 
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("Waiting for TX")
 	// wait for the tx to finish
 	_, err = utils.WaitForTx(tx)
 	if err != nil {
@@ -440,16 +442,12 @@ func profile(cmd *cobra.Command, args []string) {
 }
 
 func test(cmd *cobra.Command, args []string) {
-	utils.SetLogLevel(utils.LogLevel)
-	defer LogFile.Close()
+	res, err := utils.CheckTx("0x1441b4eb1cbf2ed2d47b5edf3e8b6ed2a153b2e327cfe1d5caa2446bdd1a9478")
+	if err != nil {
+		println(err)
+	}
 
-	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "test"}).Debug("Useful debugging information.")
-	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "test"}).Info("Something noteworthy happened!")
-	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "test"}).Warn("You should probably take a look at this.")
-	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "test"}).Error("Something failed but I'm not quitting.")
-	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "test"}).Fatal("Fatal error")
-	fmt.Println("FDSFSDFDSFFSFD")
-	return
+	println(res)
 }
 
 func init() {

@@ -34,8 +34,7 @@ func CreateNode() (string, error) {
 	}
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "CreateNode"}).Debug("Decoding response fields")
-	response := api.Response.(map[string]interface{})
-	txHash := response["txHash"].(map[string]interface{})
+	txHash := api.TxHash.(map[string]interface{})
 
 	return txHash["value"].(string), nil //tx hash
 }
@@ -81,8 +80,9 @@ func GetNodeData(address string) (map[string]interface{}, error) {
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeData"}).Debug("Decoding response fields")
 	response := api.Response.(map[string]interface{})
+	data := response["data"].(map[string]interface{})
 
-	return response, nil //node data
+	return data, nil //node data
 }
 
 // SetNodeData - set data for a Node contract
@@ -102,8 +102,7 @@ func SetNodeData(nodeAddress string, data map[string]interface{}) (string, error
 	}
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "SetNodeData"}).Debug("Decoding response fields")
-	response := api.Response.(map[string]interface{})
-	txHash := response["txHash"].(map[string]interface{})
+	txHash := api.TxHash.(map[string]interface{})
 
 	return txHash["value"].(string), nil //tx hash
 }
@@ -125,8 +124,7 @@ func ApplyToPool(nodeAddress, poolAddress string) (string, error) {
 	}
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "ApplyToPool"}).Debug("Decoding response fields")
-	response := api.Response.(map[string]interface{})
-	txHash := response["txHash"].(map[string]interface{})
+	txHash := api.TxHash.(map[string]interface{})
 
 	return txHash["value"].(string), nil //tx hash
 }

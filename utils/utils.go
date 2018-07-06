@@ -23,6 +23,7 @@ type APIResponse struct {
 	Success  bool        `json:"success"`
 	Error    string      `json:"error"`
 	Response interface{} `json:"response"`
+	TxHash   interface{} `json:"txHash"`
 	Endpoint string      `json:"endpoint"`
 }
 

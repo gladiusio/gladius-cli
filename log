@@ -1,3 +1,18 @@
-time="2018-07-03T10:47:38-04:00" level=warning msg="You should probably take a look at this." file=nodeCommands.go func=test
-time="2018-07-03T10:47:38-04:00" level=error msg="Something failed but I'm not quitting." file=nodeCommands.go func=test
-time="2018-07-03T10:47:38-04:00" level=fatal msg="Fatal error" file=nodeCommands.go func=test
+time="2018-07-06T12:51:41-04:00" level=debug msg="POST: http://localhost:3001/api/keystore/pgp/create" file=pgp.go func=CreatePGP
+time="2018-07-06T12:51:43-04:00" level=debug msg="Response recieved, piping through the response handler" file=pgp.go func=CreatePGP
+time="2018-07-06T12:51:43-04:00" level=info msg="PGP key created" file=nodeCommands.go func=createNewNode
+time="2018-07-06T12:51:43-04:00" level=info msg="Creating Node" file=nodeCommands.go func=createNewNode
+time="2018-07-06T12:51:43-04:00" level=debug msg="POST: http://localhost:3001/api/node/create" file=node.go func=CreateNode
+time="2018-07-06T12:51:44-04:00" level=debug msg="Response recieved, piping through the response handler" file=node.go func=CreateNode
+time="2018-07-06T12:51:44-04:00" level=debug msg="Decoding response fields" file=node.go func=CreateNode
+time="2018-07-06T12:51:44-04:00" level=info msg="Waiting for TX" file=nodeCommands.go func=createNewNode
+time="2018-07-06T12:52:09-04:00" level=debug msg="GET: http://localhost:3001/api/node/" file=node.go func=GetNodeAddress
+time="2018-07-06T12:52:09-04:00" level=debug msg="Response recieved, piping through the response handler" file=node.go func=GetNodeAddress
+time="2018-07-06T12:52:09-04:00" level=debug msg="Decoding response fields" file=node.go func=GetNodeAddress
+time="2018-07-06T12:52:09-04:00" level=info msg="Node created" file=nodeCommands.go func=createNewNode
+time="2018-07-06T12:52:09-04:00" level=info msg="Setting Node data" file=nodeCommands.go func=createNewNode
+time="2018-07-06T12:52:09-04:00" level=debug msg="POST: http://localhost:3001/api/node/0x372ffCd386f849A322F4946431464F5bd0b857B4/data" file=node.go func=SetNodeData
+time="2018-07-06T12:52:09-04:00" level=debug msg="Response recieved, piping through the response handler" file=node.go func=SetNodeData
+time="2018-07-06T12:52:09-04:00" level=debug msg="Decoding response fields" file=node.go func=SetNodeData
+time="2018-07-06T12:53:53-04:00" level=info msg="Node data set" file=nodeCommands.go func=createNewNode
+time="2018-07-06T12:53:53-04:00" level=info msg="Node fully created" file=nodeCommands.go func=createNewNode
