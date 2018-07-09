@@ -226,7 +226,7 @@ func CachePassphrase(passphrase string) {
 	cachedPassphrase = passphrase
 }
 
-// SetLogLevel -
+// SetLogLevel - Sets the appropriate logging level
 func SetLogLevel(level int) {
 	switch level {
 	case 1:
@@ -240,7 +240,7 @@ func SetLogLevel(level int) {
 	}
 }
 
-// ClearLogger
+// ClearLogger - Clears log file after every run
 func ClearLogger() {
 	os.Remove("./log")
 }
