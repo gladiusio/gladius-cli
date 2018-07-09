@@ -19,6 +19,7 @@ import (
 
 // LogFile - Where the logs are stored
 var LogFile *os.File
+var reset bool
 
 var cmdCreate = &cobra.Command{
 	Use:   "create",
@@ -69,8 +70,12 @@ func createNewNode(cmd *cobra.Command, args []string) {
 
 	// make sure they have a account, if they dont, make one
 	account, _ := keystore.EnsureAccount()
-	if !account {
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Warning("No account found")
+	if !account || reset {
+		if !account {
+			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Warning("No account found")
+		} else {
+			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("Reset wallet requested")
+		}
 		err := keystore.CreateAccount()
 		if err != nil {
 			fmt.Println(err)
@@ -442,12 +447,10 @@ func profile(cmd *cobra.Command, args []string) {
 }
 
 func test(cmd *cobra.Command, args []string) {
-	res, err := utils.CheckTx("0x1441b4eb1cbf2ed2d47b5edf3e8b6ed2a153b2e327cfe1d5caa2446bdd1a9478")
-	if err != nil {
-		println(err)
+	if reset {
+		println(reset)
 	}
 
-	println(res)
 }
 
 func init() {
@@ -462,9 +465,9 @@ func init() {
 	rootCmd.AddCommand(cmdTest)
 
 	// register all flags
-	// cmdTest.Flags().StringVarP(&source, "source", "s", "", "Source directory to read from")
+	cmdCreate.Flags().BoolVarP(&reset, "reset", "r", false, "reset wallet")
 	// rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug mode")
-	rootCmd.PersistentFlags().IntVarP(&utils.LogLevel, "level", "l", 1, "Sets the logging level")
+	rootCmd.PersistentFlags().IntVarP(&utils.LogLevel, "level", "l", 1, "set the logging level")
 
 	// clear previous log file
 	utils.ClearLogger()

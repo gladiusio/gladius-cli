@@ -27,6 +27,20 @@ type APIResponse struct {
 	Endpoint string      `json:"endpoint"`
 }
 
+// APIError - standard error struct from the control daemon api
+type APIError struct {
+	UserMessage  string `json:"message"`
+	ErrorMessage string `json:"error"`
+}
+
+func (e APIError) Error() string {
+	return fmt.Sprintf("%v", e.ErrorMessage)
+}
+
+func (e APIError) Message() string {
+	return fmt.Sprintf("%v", e.UserMessage)
+}
+
 // For control over HTTP client headers,
 // redirect policy, and other settings,
 // create an HTTP client
