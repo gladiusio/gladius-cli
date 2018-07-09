@@ -1,7 +1,8 @@
-time="2018-07-09T11:06:11-04:00" level=debug msg="POST: http://localhost:3001/api/keystore/account" file=wallet.go func=GetAccounts
-time="2018-07-09T11:06:11-04:00" level=debug msg="Response recieved, piping through the response handler" file=wallet.go func=GetAccounts
-time="2018-07-09T11:06:11-04:00" level=debug msg="Decoding response fields" file=wallet.go func=GetAccounts
-time="2018-07-09T11:06:11-04:00" level=info msg="Reset wallet requested" file=nodeCommands.go func=createNewNode
-time="2018-07-09T11:06:13-04:00" level=debug msg="POST: http://localhost:3001/api/keystore/account/create" file=wallet.go func=CreateAccount
-time="2018-07-09T11:06:13-04:00" level=debug msg="Response recieved, piping through the response handler" file=wallet.go func=CreateAccount
-time="2018-07-09T11:06:13-04:00" level=fatal msg="Account could not be created:utils.ControlDaemonHandler/keystore.CreateAccount" file=nodeCommands.go func=createNewNode
+time="2018-07-09T15:57:03-04:00" level=debug msg="GET: http://localhost:3001/api/node/" file=node.go func=GetNodeAddress
+time="2018-07-09T15:57:03-04:00" level=debug msg="Response recieved, piping through the response handler" file=node.go func=GetNodeAddress
+time="2018-07-09T15:57:03-04:00" level=debug msg="Decoding response fields" file=node.go func=GetNodeAddress
+time="2018-07-09T15:57:03-04:00" level=info msg="Checking Application" file=nodeCommands.go func=checkPoolApp
+time="2018-07-09T15:57:03-04:00" level=debug msg="GET: http://localhost:3001/api/node/0x20fFA64742d4b82B4E3Ae77E7316b8Fb332D37De/application/0xDAcd582c3Ba1A90567Da0fC3f1dBB638D9438e06" file=node.go func=CheckPoolApplication
+time="2018-07-09T15:57:03-04:00" level=debug msg="Response recieved, piping through the response handler" file=node.go func=CheckPoolApplication
+time="2018-07-09T15:57:03-04:00" level=debug msg="Decoding response fields" file=node.go func=CheckPoolApplication
+time="2018-07-09T15:57:03-04:00" level=info msg="Application checked" file=nodeCommands.go func=checkPoolApp
