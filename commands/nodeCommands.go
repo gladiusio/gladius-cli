@@ -19,7 +19,8 @@ import (
 
 // LogFile - Where the logs are stored
 var LogFile *os.File
-var reset bool
+
+// var reset bool
 
 var cmdCreate = &cobra.Command{
 	Use:   "create",
@@ -70,12 +71,14 @@ func createNewNode(cmd *cobra.Command, args []string) {
 
 	// make sure they have a account, if they dont, make one
 	account, _ := keystore.EnsureAccount()
-	if !account || reset {
-		if !account {
-			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Warning("No account found")
-		} else {
-			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("Reset wallet requested")
-		}
+	// if !account || reset {
+	// 	if !account {
+	// 		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Warning("No account found")
+	// 	} else {
+	// 		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("Reset wallet requested")
+	// 	}
+	if !account {
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Warning("No account found")
 		err := keystore.CreateAccount()
 		if err != nil {
 			fmt.Println(err)
@@ -447,9 +450,9 @@ func profile(cmd *cobra.Command, args []string) {
 }
 
 func test(cmd *cobra.Command, args []string) {
-	if reset {
-		println(reset)
-	}
+	// if reset {
+	// 	println(reset)
+	// }
 
 }
 
@@ -465,7 +468,7 @@ func init() {
 	rootCmd.AddCommand(cmdTest)
 
 	// register all flags
-	cmdCreate.Flags().BoolVarP(&reset, "reset", "r", false, "reset wallet")
+	// cmdCreate.Flags().BoolVarP(&reset, "reset", "r", false, "reset wallet")
 	// rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug mode")
 	rootCmd.PersistentFlags().IntVarP(&utils.LogLevel, "level", "l", 1, "set the logging level")
 

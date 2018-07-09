@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  name = "github.com/BurntSushi/toml"
-  packages = ["."]
-  revision = "b26d9c308763d68093482582cea63d69be07a0f0"
-  version = "v0.3.0"
-
-[[projects]]
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
@@ -83,6 +77,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "08f96a3cd0f83c81abc52e39367576a2d1a6564264b9f676733328fb8c960c98"
+  inputs-digest = "817528840e2ba6e53a0d143ba8309ffdba63497326e16289e1b8c3990e77e26e"
   solver-name = "gps-cdcl"
   solver-version = 1
