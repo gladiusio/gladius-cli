@@ -30,8 +30,6 @@ func CreateAccount() error {
 		return fmt.Errorf("%v/keystore.CreateAccount", err)
 	}
 
-	println(res)
-
 	log.WithFields(log.Fields{"file": "wallet.go", "func": "CreateAccount"}).Debug("Response recieved, piping through the response handler")
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
