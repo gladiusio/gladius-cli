@@ -1,7 +1,0 @@
-time="2018-07-09T11:06:11-04:00" level=debug msg="POST: http://localhost:3001/api/keystore/account" file=wallet.go func=GetAccounts
-time="2018-07-09T11:06:11-04:00" level=debug msg="Response recieved, piping through the response handler" file=wallet.go func=GetAccounts
-time="2018-07-09T11:06:11-04:00" level=debug msg="Decoding response fields" file=wallet.go func=GetAccounts
-time="2018-07-09T11:06:11-04:00" level=info msg="Reset wallet requested" file=nodeCommands.go func=createNewNode
-time="2018-07-09T11:06:13-04:00" level=debug msg="POST: http://localhost:3001/api/keystore/account/create" file=wallet.go func=CreateAccount
-time="2018-07-09T11:06:13-04:00" level=debug msg="Response recieved, piping through the response handler" file=wallet.go func=CreateAccount
-time="2018-07-09T11:06:13-04:00" level=fatal msg="Account could not be created:utils.ControlDaemonHandler/keystore.CreateAccount" file=nodeCommands.go func=createNewNode
