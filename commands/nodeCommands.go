@@ -71,20 +71,13 @@ func createNewNode(cmd *cobra.Command, args []string) {
 
 	// make sure they have a account, if they dont, make one
 	account, _ := keystore.EnsureAccount()
-	// if !account || reset {
-	// 	if !account {
-	// 		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Warning("No account found")
-	// 	} else {
-	// 		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("Reset wallet requested")
-	// 	}
 	if !account {
 		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Warning("No account found")
-		err := keystore.CreateAccount()
+		res, err := keystore.CreateAccount()
 		if err != nil {
-			fmt.Println(err)
-			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Fatal(err)
+			utils.PrintError(err, "", "nodeCommands.createNewNode")
 		}
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("Account created")
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info(res)
 		fmt.Println()
 		terminal.Println(ansi.Color("Please add test ether to your new account from a ropsten faucet", "255+hb"))
 		fmt.Println()
@@ -161,17 +154,15 @@ func createNewNode(cmd *cobra.Command, args []string) {
 	// perform the questions
 	err = survey.Ask(qs, &answers)
 	if err != nil {
-		fmt.Println(err)
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Fatal(err)
+		utils.PrintError(err, "", "nodeCommands.createNewNode")
 	}
 
 	// gen a new pgp key for this contract
-	_, err = keystore.CreatePGP(answers)
+	res, err := keystore.CreatePGP(answers)
 	if err != nil {
-		fmt.Println(err)
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Fatal(err)
+		utils.PrintError(err, "", "nodeCommands.createNewNode")
 	}
-	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("PGP key created")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info(res)
 
 	if !ipSuccess {
 		answers["ip"] = ip
@@ -183,24 +174,20 @@ func createNewNode(cmd *cobra.Command, args []string) {
 	// create the node
 	tx, err := node.CreateNode()
 	if err != nil {
-		fmt.Println(err)
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Fatal(err)
+		utils.PrintError(err, "", "nodeCommands.createNewNode")
 	}
 
 	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("Waiting for TX")
 	// wait for the node tx to finish
 	_, err = utils.WaitForTx(tx)
 	if err != nil {
-		fmt.Println(err)
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Fatal(err)
+		utils.PrintError(err, "", "nodeCommands.createNewNode")
 	}
 
 	// save the node address
 	nodeAddress, err := node.GetNodeAddress()
 	if err != nil {
-		fmt.Println("HEY, OVER HERE!")
-		fmt.Println(err)
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Fatal(err)
+		utils.PrintError(err, "", "nodeCommands.createNewNode")
 	}
 
 	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("Node created")
@@ -210,15 +197,13 @@ func createNewNode(cmd *cobra.Command, args []string) {
 	// set node data
 	tx, err = node.SetNodeData(nodeAddress, answers)
 	if err != nil {
-		fmt.Println(err)
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Fatal("err")
+		utils.PrintError(err, "", "nodeCommands.createNewNode")
 	}
 
 	// wait for data tx to finish
 	_, err = utils.WaitForTx(tx)
 	if err != nil {
-		fmt.Println(err)
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Fatal(err)
+		utils.PrintError(err, "", "nodeCommands.createNewNode")
 	}
 
 	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("Node data set")
@@ -240,13 +225,12 @@ func applyToPool(cmd *cobra.Command, args []string) {
 	// make sure they have a account, if they dont, make one
 	account, _ := keystore.EnsureAccount()
 	if !account {
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Warning("No account found")
-		err := keystore.CreateAccount()
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Warning("No accounts found")
+		res, err := keystore.CreateAccount()
 		if err != nil {
-			fmt.Println(err)
-			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Fatal(err)
+			utils.PrintError(err, "", "nodeCommands.applyToPool")
 		}
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Info("Account created")
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Info(res)
 		fmt.Println("Please add test ether to your new account from a ropsten faucet")
 		return
 	}
@@ -277,8 +261,7 @@ func applyToPool(cmd *cobra.Command, args []string) {
 	// perform the questions
 	err := survey.Ask(qs, &answers)
 	if err != nil {
-		fmt.Println(err)
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Fatal(err)
+		utils.PrintError(err, "", "nodeCommands.applyToPool")
 	}
 
 	poolAddy := answers["pool"]
@@ -286,24 +269,21 @@ func applyToPool(cmd *cobra.Command, args []string) {
 	// save the node address
 	nodeAddress, err := node.GetNodeAddress()
 	if err != nil {
-		fmt.Println(err)
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Fatal(err)
+		utils.PrintError(err, "", "nodeCommands.applyToPool")
 	}
 
 	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Info("Applying to pool")
 	// send data to the pool
 	tx, err := node.ApplyToPool(nodeAddress, poolAddy.(string))
 	if err != nil {
-		fmt.Println(err)
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Fatal(err)
+		utils.PrintError(err, "", "nodeCommands.applyToPool")
 	}
 
-	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info("Waiting for TX")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Info("Waiting for TX")
 	// wait for the tx to finish
 	_, err = utils.WaitForTx(tx)
 	if err != nil {
-		fmt.Println(err)
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Fatal(err)
+		utils.PrintError(err, "", "nodeCommands.applyToPool")
 	}
 
 	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Info("Application transaction successful")
@@ -342,8 +322,7 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 	// perform the questions
 	err := survey.Ask(qs, &answers)
 	if err != nil {
-		fmt.Println(err)
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "checkPoolApp"}).Fatal(err)
+		utils.PrintError(err, "", "nodeCommands.checkPoolApp")
 	}
 
 	poolAddy := answers["pool"]
@@ -351,8 +330,7 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 	// save the node address
 	nodeAddress, err := node.GetNodeAddress()
 	if err != nil {
-		fmt.Println(err)
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "checkPoolApp"}).Fatal(err)
+		utils.PrintError(err, "", "nodeCommands.checkPoolApp")
 	}
 
 	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "checkPoolApp"}).Info("Checking Application")
@@ -376,8 +354,7 @@ func network(cmd *cobra.Command, args []string) {
 	case "start":
 		reply, err := node.StartNetworkNode()
 		if err != nil {
-			fmt.Println("Error starting the node networking daemon. Make sure it's running!")
-			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Fatal(err)
+			utils.PrintError(err, "Error starting the node networking daemon. Make sure it's running!", "nodeCommands.network")
 		} else {
 			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Info("Network daemon started")
 			terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
@@ -387,8 +364,7 @@ func network(cmd *cobra.Command, args []string) {
 	case "stop":
 		reply, err := node.StopNetworkNode()
 		if err != nil {
-			fmt.Println("Error stopping the node networking daemon. Make sure it's running!")
-			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Fatal(err)
+			utils.PrintError(err, "Error stopping the node networking daemon. Make sure it's running!", "nodeCommands.network")
 		} else {
 			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Info("Network daemon stopped")
 			terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
@@ -398,8 +374,7 @@ func network(cmd *cobra.Command, args []string) {
 	case "status":
 		reply, err := node.StatusNetworkNode()
 		if err != nil {
-			fmt.Println("Error communicating with the node networking daemon. Make sure it's running!")
-			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Fatal(err)
+			utils.PrintError(err, "Error communicating with the node networking daemon. Make sure it's running!", "nodeCommands.network")
 		} else {
 			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Info("Network daemon status")
 			terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
@@ -407,8 +382,6 @@ func network(cmd *cobra.Command, args []string) {
 			terminal.Println("Use", ansi.Color("gladius node stop", "83+hb"), "to stop the node networking software")
 		}
 	default:
-		// reply := "command not recognized"
-		// terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
 		terminal.Println("\nUse", ansi.Color("gladius node -h", "83+hb"), "for help")
 		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Fatal("command not recognized")
 	}
@@ -421,8 +394,8 @@ func profile(cmd *cobra.Command, args []string) {
 
 	account, err := keystore.GetAccounts()
 	if err != nil {
-		fmt.Println("No accounts found. Create a account with: gladius create")
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "profile"}).Fatal(err)
+		utils.PrintError(err, "", "nodeCommands.profile")
+		// fmt.Println("No accounts found. Create a account with: gladius create")
 	}
 
 	userAddress := account
@@ -431,16 +404,16 @@ func profile(cmd *cobra.Command, args []string) {
 
 	address, err := node.GetNodeAddress()
 	if err != nil {
-		fmt.Println("No Node found. Create a node with : gladius create")
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "profile"}).Fatal(err)
+		// fmt.Println("No Node found. Create a node with : gladius create")
+		utils.PrintError(err, "", "nodeCommands.profile")
 	}
 
 	terminal.Println(ansi.Color("Node Address:", "83+hb"), ansi.Color(address, "255+hb"))
 
 	data, err := node.GetNodeData(address)
 	if err != nil {
-		fmt.Println("No Node found. Create a node with : gladius create")
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "profile"}).Fatal(err)
+		// fmt.Println("No Node found. Create a node with : gladius create")
+		utils.PrintError(err, "", "nodeCommands.profile")
 	}
 
 	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "profile"}).Info("Node information found")
@@ -450,10 +423,9 @@ func profile(cmd *cobra.Command, args []string) {
 }
 
 func test(cmd *cobra.Command, args []string) {
-	// if reset {
-	// 	println(reset)
-	// }
-
+	customError := utils.ErrorResponse{UserMessage: "MSG", LogError: "LOG", Path: "PATH"}
+	err := utils.HandleError(&customError, "msg2", "path2")
+	utils.PrintError(err, "msg", "path")
 }
 
 func init() {
@@ -470,7 +442,7 @@ func init() {
 	// register all flags
 	// cmdCreate.Flags().BoolVarP(&reset, "reset", "r", false, "reset wallet")
 	// rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug mode")
-	rootCmd.PersistentFlags().IntVarP(&utils.LogLevel, "level", "l", 1, "set the logging level")
+	rootCmd.PersistentFlags().IntVarP(&utils.LogLevel, "level", "l", 2, "set the logging level")
 
 	// clear previous log file
 	utils.ClearLogger()
@@ -482,6 +454,4 @@ func init() {
 
 	log.SetOutput(LogFile)
 
-	// create default logger (include filename and function)
-	// logger := log.WithFields(log.Fields{"file": "nodeCommands.go", "function": "functionName"})
 }

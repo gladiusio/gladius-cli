@@ -2,15 +2,11 @@ package node
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/gladiusio/gladius-cli/utils"
 	"github.com/powerman/rpc-codec/jsonrpc2"
 	log "github.com/sirupsen/logrus"
 )
-
-// LogFile - Where the logs are stored
-var LogFile *os.File
 
 // Test - random test function
 func Test() {
@@ -24,13 +20,13 @@ func CreateNode() (string, error) {
 	// use the custom sendRequest to send something to the control daemon api
 	res, err := utils.SendRequest("POST", url, nil)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.CreateNode", err)
+		return "", utils.HandleError(err, "", "node.CreateNode")
 	}
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "CreateNode"}).Debug("Response recieved, piping through the response handler")
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return "", fmt.Errorf("%v/node.CreateNode", err)
+		return "", utils.HandleError(err, "", "node.CreateNode")
 	}
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "CreateNode"}).Debug("Decoding response fields")
@@ -46,13 +42,13 @@ func GetNodeAddress() (string, error) {
 	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeAddress"}).Debug("GET: ", url)
 	res, err := utils.SendRequest("GET", url, nil)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.GetNodeAddress", err)
+		return "", utils.HandleError(err, "", "node.GetNodeAddress")
 	}
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeAddress"}).Debug("Response recieved, piping through the response handler")
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return "", fmt.Errorf("%v/node.GetNodeAddress", err)
+		return "", utils.HandleError(err, "", "node.GetNodeAddress")
 	}
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeAddress"}).Debug("Decoding response fields")
@@ -69,13 +65,13 @@ func GetNodeData(address string) (map[string]interface{}, error) {
 	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeData"}).Debug("GET: ", url)
 	res, err := utils.SendRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("%v/node.GetNodeAddress", err)
+		return nil, utils.HandleError(err, "", "node.GetNodeData")
 	}
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeData"}).Debug("Response recieved, piping through the response handler")
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return nil, fmt.Errorf("%v/node.GetNodeAddress", err)
+		return nil, utils.HandleError(err, "", "node.GetNodeData")
 	}
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeData"}).Debug("Decoding response fields")
@@ -92,13 +88,13 @@ func SetNodeData(nodeAddress string, data map[string]interface{}) (string, error
 	log.WithFields(log.Fields{"file": "node.go", "func": "SetNodeData"}).Debug("POST: ", url)
 	res, err := utils.SendRequest("POST", url, data)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.SetNodeData", err)
+		return "", utils.HandleError(err, "", "node.SetNodeData")
 	}
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "SetNodeData"}).Debug("Response recieved, piping through the response handler")
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return "", fmt.Errorf("%v/node.SetNodeData", err)
+		return "", utils.HandleError(err, "", "node.SetNodeData")
 	}
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "SetNodeData"}).Debug("Decoding response fields")
@@ -114,13 +110,13 @@ func ApplyToPool(nodeAddress, poolAddress string) (string, error) {
 	log.WithFields(log.Fields{"file": "node.go", "func": "ApplyToPool"}).Debug("POST: ", url)
 	res, err := utils.SendRequest("POST", url, nil)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.ApplyToPool", err)
+		return "", utils.HandleError(err, "", "node.AppyToPool")
 	}
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "ApplyToPool"}).Debug("Response recieved, piping through the response handler")
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return "", fmt.Errorf("%v/node.CreateNode", err)
+		return "", utils.HandleError(err, "", "node.AppyToPool")
 	}
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "ApplyToPool"}).Debug("Decoding response fields")
@@ -136,13 +132,13 @@ func CheckPoolApplication(nodeAddress, poolAddress string) (string, error) {
 	log.WithFields(log.Fields{"file": "node.go", "func": "CheckPoolApplication"}).Debug("GET: ", url)
 	res, err := utils.SendRequest("GET", url, nil)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.CheckPoolApplication", err)
+		return "", utils.HandleError(err, "", "node.CheckPoolApplication")
 	}
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "CheckPoolApplication"}).Debug("Response recieved, piping through the response handler")
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return "", fmt.Errorf("%v/node.CheckPoolApplication", err)
+		return "", utils.HandleError(err, "", "node.CheckPoolApplication")
 	}
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "CheckPoolApplication"}).Debug("Decoding response fields")
@@ -162,7 +158,7 @@ func StartNetworkNode() (string, error) {
 	// Synchronous call using positional params and TCP.
 	err := clientHTTP.Call("GladiusEdge.Start", nil, &reply)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.StopNetworkNode", err)
+		return "", utils.HandleError(err, "", "node.StartNetworkNode")
 	}
 	return reply, nil
 }
@@ -178,7 +174,7 @@ func StopNetworkNode() (string, error) {
 	// Synchronous call using positional params and TCP.
 	err := clientHTTP.Call("GladiusEdge.Stop", nil, &reply)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.StopNetworkNode", err)
+		return "", utils.HandleError(err, "", "node.StopNetworkNode")
 	}
 
 	return reply, nil
@@ -195,29 +191,8 @@ func StatusNetworkNode() (string, error) {
 	// Synchronous call using positional params and TCP.
 	err := clientHTTP.Call("GladiusEdge.Status", nil, &reply)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.StatusNetworkNode", err)
+		return "", utils.HandleError(err, "", "node.StatusNetworkNode")
 	}
 
 	return reply, nil
-}
-
-func init() {
-	// set up the logger
-	switch utils.LogLevel {
-	case 1:
-		log.SetLevel(log.DebugLevel)
-	case 2:
-		log.SetLevel(log.InfoLevel)
-	case 3:
-		log.SetLevel(log.WarnLevel)
-	default:
-		log.SetLevel(log.FatalLevel)
-	}
-
-	LogFile, err := os.OpenFile("log", os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		log.Warning("Failed to log to file, using default stderr")
-	}
-
-	log.SetOutput(LogFile)
 }

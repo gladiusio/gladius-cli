@@ -15,7 +15,7 @@ import (
 )
 
 // LogLevel - What kind of logs to show (1 = Debug and above, 2 = Info and above, 3 = Warnings and above, 4 = Fatal)
-var LogLevel = 1
+var LogLevel int
 
 // APIResponse - standard response from the control daemon api
 type APIResponse struct {
@@ -27,18 +27,21 @@ type APIResponse struct {
 	Endpoint string      `json:"endpoint"`
 }
 
-// APIError - standard error struct from the control daemon api
-type APIError struct {
-	UserMessage  string `json:"message"`
-	ErrorMessage string `json:"error"`
+// ErrorResponse - custom error struct
+type ErrorResponse struct {
+	UserMessage string
+	LogError    string
+	Path        string
 }
 
-func (e APIError) Error() string {
-	return fmt.Sprintf("%v", e.ErrorMessage)
+// Error - for the dev/logger
+func (e *ErrorResponse) Error() string {
+	return e.LogError
 }
 
-func (e APIError) Message() string {
-	return fmt.Sprintf("%v", e.UserMessage)
+// Message - for the user
+func (e *ErrorResponse) Message() string {
+	return e.UserMessage
 }
 
 // For control over HTTP client headers,
@@ -59,7 +62,7 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 	if data != nil {
 		jsonPayload, err := json.Marshal(data)
 		if err != nil {
-			return "", fmt.Errorf("%v:json.Marshall/utils.sendRequest", err)
+			return "", HandleError(err, "Invalid Data", ":json.Marshall/SendRequest")
 		}
 		b = *bytes.NewBuffer(jsonPayload)
 	}
@@ -67,7 +70,7 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 	// Build the request
 	req, err := http.NewRequest(requestType, url, &b)
 	if err != nil {
-		return "", fmt.Errorf("%v:http.NewRequest/utils.SendRequest", err)
+		return "", HandleError(err, "Could not build request", ":http.NewRequest/SendRequest")
 	}
 
 	req.Header.Set("User-Agent", "gladius-cli")
@@ -88,13 +91,13 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 	// Send the request via a client
 	res, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("%v:client.Do/utils.SendRequest", err)
+		return "", HandleError(err, "Could not send request", ":client.Do/SendRequest")
 	}
 
 	// read the body of the response
 	body, readErr := ioutil.ReadAll(res.Body)
 	if readErr != nil {
-		return "", fmt.Errorf("%v:ioutil.ReadAll/utils.SendRequest", err)
+		return "", HandleError(err, "Could not build request", ":ioutil.ReadAll/SendRequest")
 	}
 
 	// Defer the closing of the body
@@ -109,12 +112,12 @@ func CheckTx(tx string) (bool, error) {
 
 	res, err := SendRequest("GET", url, nil)
 	if err != nil {
-		return false, fmt.Errorf("%v/utils.CheckTx", err)
+		return false, HandleError(err, "", "utils.CheckTx")
 	}
 
 	api, err := ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return false, fmt.Errorf("%v/utils.CheckTx", err)
+		return false, HandleError(err, "", "utils.CheckTx")
 	}
 
 	response := api.Response.(map[string]interface{})
@@ -164,9 +167,8 @@ func WaitForTx(tx string) (bool, error) {
 	}()
 
 	err := <-quit
-
 	if err != nil {
-		return false, fmt.Errorf("%v/utils.WaitForTx", err)
+		return false, HandleError(err, "", "utils.WaitForTx")
 	}
 
 	fmt.Printf("\nTx: %s\t Status: Successful\n", tx)
@@ -179,19 +181,36 @@ func ControlDaemonHandler(_res []byte) (APIResponse, error) {
 
 	err := json.Unmarshal(_res, &response)
 	if err != nil {
-		return APIResponse{}, fmt.Errorf("%v:json.Unmarshall/utils.ControlDaemonHandler", err)
+		return APIResponse{}, HandleError(err, "Invalid server response", ":json.Unmarshall/utils.ControlDaemonHandler")
 	}
 
 	if !response.Success {
-		return APIResponse{}, fmt.Errorf("%s:utils.ControlDaemonHandler", response.Message)
+		return APIResponse{}, HandleError(fmt.Errorf(response.Error), response.Message, ":APIResponse/utils.ControlDaemonHandler")
 	}
 
 	return response, nil
 }
 
+// HandleError - error handler for the ErrorReponse's
+func HandleError(err error, msg, path string) error {
+	if err, ok := err.(*ErrorResponse); ok {
+		return &ErrorResponse{UserMessage: err.Message() + msg, LogError: err.Error() + fmt.Sprint(err), Path: err.Path + "/" + path}
+	}
+	return &ErrorResponse{UserMessage: msg, LogError: fmt.Sprint(err), Path: path}
+}
+
+// PrintError - error handler for the ErrorReponse's
+func PrintError(err error, msg, path string) {
+	if err, ok := err.(*ErrorResponse); ok {
+		fmt.Println(err.Message())
+		log.WithFields(log.Fields{"path": err.Path}).Fatal(err.LogError)
+	} else {
+		fmt.Println(err)
+	}
+}
+
 // GetIP - Retrieve the current machine's external IP address
 func GetIP() (string, error) {
-
 	sites := [4]string{"https://ipv4.myexternalip.com/raw", "https://api.ipify.org/?format=text", "https://ident.me/", "https://ipv4bot.whatismyipaddress.com"}
 
 	for _, site := range sites {
@@ -200,7 +219,7 @@ func GetIP() (string, error) {
 			return res, nil
 		}
 	}
-	return "", fmt.Errorf("%s:utils.GetIP", "Something went wrong getting this machines IP address")
+	return "", HandleError(fmt.Errorf("Could not retrieve IP address"), "Something went wrong getting this machines IP address", ":utils.GetIP")
 }
 
 // NewPassphrase - make a new password and confirm
