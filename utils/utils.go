@@ -53,7 +53,8 @@ var client = &http.Client{
 
 var cachedPassphrase string
 
-// SendRequest - custom function to make sending request less of a pain in the arse
+// SendRequest - custom function to make sending api requests less of a pain
+// in the arse.
 func SendRequest(requestType, url string, data interface{}) (string, error) {
 
 	b := bytes.Buffer{}
@@ -106,7 +107,8 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 	return string(body), nil //tx
 }
 
-// CheckTx - check status of tx hash
+// CheckTx - check status of tx.
+// Perform a single check on a tx.
 func CheckTx(tx string) (bool, error) {
 	url := fmt.Sprintf("http://localhost:3001/api/status/tx/%s", tx)
 
@@ -129,7 +131,8 @@ func CheckTx(tx string) (bool, error) {
 	return response["complete"].(bool), nil // tx completion status
 }
 
-// WaitForTx - wait for the tx to complete
+// WaitForTx - wait for a tx on the blockchain to complete.
+// Queries the API every second to see if tx is complete.
 func WaitForTx(tx string) (bool, error) {
 	ticker := time.NewTicker(1 * time.Second)
 	quit := make(chan error) // this is the exit condition channel
@@ -175,7 +178,9 @@ func WaitForTx(tx string) (bool, error) {
 	return true, nil
 }
 
-// ControlDaemonHandler - handler for the API responses
+// ControlDaemonHandler - handler for the API responses.
+// Unmarshalls responses into a usable APIResponse struct.
+// If an error is returned by the API, gives it to the error handler.
 func ControlDaemonHandler(_res []byte) (APIResponse, error) {
 	var response = APIResponse{}
 
@@ -191,15 +196,20 @@ func ControlDaemonHandler(_res []byte) (APIResponse, error) {
 	return response, nil
 }
 
-// HandleError - error handler for the ErrorReponse's
+// HandleError - custom error handler for the CLI.
+// Uses ResponseError as a means of keeping 2 seperate error messages.
+// UserMessage is a message to display to a user when an error occurs.
+// LogError is a message to log or display to a developer.
+// Path is the error path which is up to the developer to include.
 func HandleError(err error, msg, path string) error {
 	if err, ok := err.(*ErrorResponse); ok {
-		return &ErrorResponse{UserMessage: err.Message() + msg, LogError: err.Error() + fmt.Sprint(err), Path: err.Path + "/" + path}
+		return &ErrorResponse{UserMessage: err.Message() + msg, LogError: err.Error(), Path: err.Path + "/" + path}
 	}
 	return &ErrorResponse{UserMessage: msg, LogError: fmt.Sprint(err), Path: path}
 }
 
-// PrintError - error handler for the ErrorReponse's
+// PrintError - print and logs ReponseError's.
+// Use this to println the UserMessage and log the LogError with correct path.
 func PrintError(err error, msg, path string) {
 	if err, ok := err.(*ErrorResponse); ok {
 		fmt.Println(err.Message())
@@ -209,7 +219,8 @@ func PrintError(err error, msg, path string) {
 	}
 }
 
-// GetIP - Retrieve the current machine's external IP address
+// GetIP - Retrieve the current machine's external IPv4 address
+// using multiple ip API's.
 func GetIP() (string, error) {
 	sites := [4]string{"https://ipv4.myexternalip.com/raw", "https://api.ipify.org/?format=text", "https://ident.me/", "https://ipv4bot.whatismyipaddress.com"}
 
@@ -222,7 +233,7 @@ func GetIP() (string, error) {
 	return "", HandleError(fmt.Errorf("Could not retrieve IP address"), "Something went wrong getting this machines IP address", ":utils.GetIP")
 }
 
-// NewPassphrase - make a new password and confirm
+// NewPassphrase - prompts user for new passphrase and confirms it.
 func NewPassphrase() string {
 	password1 := ""
 	prompt := &survey.Password{
@@ -244,7 +255,7 @@ func NewPassphrase() string {
 	return password1
 }
 
-// AskPassphrase - ask for users password
+// AskPassphrase - prompt user for passphrase.
 func AskPassphrase() string {
 	password := ""
 	prompt := &survey.Password{
@@ -254,12 +265,14 @@ func AskPassphrase() string {
 	return password
 }
 
-// CachePassphrase - cache the passphrase so you don't have to enter it
+// CachePassphrase - cache passphrase so user's don't have to retype it every
+// time in the same command.
 func CachePassphrase(passphrase string) {
 	cachedPassphrase = passphrase
 }
 
-// SetLogLevel - Sets the appropriate logging level
+// SetLogLevel - Sets the appropriate logging level.
+// 1 = Debug < , 2 = Info <, 3 = Warning <, 4 = Fatal.
 func SetLogLevel(level int) {
 	switch level {
 	case 1:
@@ -273,7 +286,7 @@ func SetLogLevel(level int) {
 	}
 }
 
-// ClearLogger - Clears log file after every run
+// ClearLogger - Clears log file after every run.
 func ClearLogger() {
 	os.Remove("./log")
 }

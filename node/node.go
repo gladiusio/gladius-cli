@@ -8,11 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Test - random test function
-func Test() {
-}
-
-// CreateNode - create a Node contract
+// CreateNode - create a Node contract using controld api.
 func CreateNode() (string, error) {
 	url := "http://localhost:3001/api/node/create"
 
@@ -24,6 +20,7 @@ func CreateNode() (string, error) {
 	}
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "CreateNode"}).Debug("Response recieved, piping through the response handler")
+	// handle api response
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
 		return "", utils.HandleError(err, "", "node.CreateNode")
@@ -58,7 +55,7 @@ func GetNodeAddress() (string, error) {
 	return address, nil //node address
 }
 
-// GetNodeData - get node address from owner lookup
+// GetNodeData - get node data from owner lookup
 func GetNodeData(address string) (map[string]interface{}, error) {
 	url := "http://localhost:3001/api/node/" + address + "/data"
 
@@ -103,7 +100,7 @@ func SetNodeData(nodeAddress string, data map[string]interface{}) (string, error
 	return txHash["value"].(string), nil //tx hash
 }
 
-// ApplyToPool - apply to a pool [Need to implement new API]
+// ApplyToPool - apply to a pool
 func ApplyToPool(nodeAddress, poolAddress string) (string, error) {
 	url := fmt.Sprintf("http://localhost:3001/api/node/%s/apply/%s", nodeAddress, poolAddress)
 
@@ -125,7 +122,7 @@ func ApplyToPool(nodeAddress, poolAddress string) (string, error) {
 	return txHash["value"].(string), nil //tx hash
 }
 
-// CheckPoolApplication - check the status of your pool application [Need to implement new API]
+// CheckPoolApplication - check the status of your pool application
 func CheckPoolApplication(nodeAddress, poolAddress string) (string, error) {
 	url := fmt.Sprintf("http://localhost:3001/api/node/%s/application/%s", nodeAddress, poolAddress)
 
