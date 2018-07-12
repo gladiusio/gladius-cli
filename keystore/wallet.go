@@ -66,7 +66,7 @@ func GetAccounts() (string, error) {
 	return response["address"].(string), nil
 }
 
-// EnsureAccount - Make sure they have an account
+// EnsureAccount - make sure they have an account
 func EnsureAccount() (bool, error) {
 	_, err := GetAccounts()
 	if err != nil {

@@ -178,9 +178,27 @@ func WaitForTx(tx string) (bool, error) {
 	return true, nil
 }
 
-// ControlDaemonHandler - handler for the API responses.
-// Unmarshalls responses into a usable APIResponse struct.
-// If an error is returned by the API, gives it to the error handler.
+// CheckGLABalance - check GLA balance of account
+func CheckGLABalance(address string) (float64, error) {
+	url := fmt.Sprintf("http://localhost:3001/account/%s/balance/gla", address)
+
+	res, err := SendRequest("GET", url, nil)
+	if err != nil {
+		return 0, HandleError(err, "", "utils.CheckGLABalance")
+	}
+
+	api, err := ControlDaemonHandler([]byte(res))
+	if err != nil {
+		return 0, HandleError(err, "", "utils.CheckGLABalance")
+	}
+
+	response := api.Response.(map[string]interface{})
+	gla := response["value"].(float64)
+
+	return gla, nil // value of gla in account
+}
+
+// ControlDaemonHandler - handler for the API responses
 func ControlDaemonHandler(_res []byte) (APIResponse, error) {
 	var response = APIResponse{}
 
