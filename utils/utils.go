@@ -10,8 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mgutz/ansi"
 	log "github.com/sirupsen/logrus"
 	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // LogLevel - What kind of logs to show (1 = Debug and above, 2 = Info and above, 3 = Warnings and above, 4 = Fatal)
@@ -178,24 +180,24 @@ func WaitForTx(tx string) (bool, error) {
 	return true, nil
 }
 
-// CheckGLABalance - check GLA balance of account
-func CheckGLABalance(address string) (float64, error) {
-	url := fmt.Sprintf("http://localhost:3001/account/%s/balance/gla", address)
+// CheckBalance - check SYMBOL balance of account
+func CheckBalance(address, symbol string) (float64, error) {
+	url := fmt.Sprintf("http://localhost:3001/api/account/%s/balance/%s", address, symbol)
 
 	res, err := SendRequest("GET", url, nil)
 	if err != nil {
-		return 0, HandleError(err, "", "utils.CheckGLABalance")
+		return 0, HandleError(err, "", "utils.CheckBalance")
 	}
 
 	api, err := ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return 0, HandleError(err, "", "utils.CheckGLABalance")
+		return 0, HandleError(err, "", "utils.CheckBalance")
 	}
 
 	response := api.Response.(map[string]interface{})
-	gla := response["value"].(float64)
+	balance := response["value"].(float64)
 
-	return gla, nil // value of gla in account
+	return balance, nil // value of $SYMBOL in account
 }
 
 // ControlDaemonHandler - handler for the API responses
@@ -228,9 +230,10 @@ func HandleError(err error, msg, path string) error {
 
 // PrintError - print and logs ReponseError's.
 // Use this to println the UserMessage and log the LogError with correct path.
-func PrintError(err error, msg, path string) {
+func PrintError(err error) {
 	if err, ok := err.(*ErrorResponse); ok {
-		fmt.Println(err.Message())
+		terminal.Print(ansi.Color("[ERROR] ", "196+hb"))
+		terminal.Println(ansi.Color(err.Message(), "255+hb"))
 		log.WithFields(log.Fields{"path": err.Path}).Fatal(err.LogError)
 	} else {
 		fmt.Println(err)

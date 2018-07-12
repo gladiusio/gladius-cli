@@ -155,7 +155,7 @@ func StartNetworkNode() (string, error) {
 	// Synchronous call using positional params and TCP.
 	err := clientHTTP.Call("GladiusEdge.Start", nil, &reply)
 	if err != nil {
-		return "", utils.HandleError(err, "", "node.StartNetworkNode")
+		return "", utils.HandleError(err, "Error starting the node networking daemon. Make sure it's running!", "node.StartNetworkNode")
 	}
 	return reply, nil
 }
@@ -171,7 +171,7 @@ func StopNetworkNode() (string, error) {
 	// Synchronous call using positional params and TCP.
 	err := clientHTTP.Call("GladiusEdge.Stop", nil, &reply)
 	if err != nil {
-		return "", utils.HandleError(err, "", "node.StopNetworkNode")
+		return "", utils.HandleError(err, "Error stopping the node networking daemon. Make sure it's running!", "node.StopNetworkNode")
 	}
 
 	return reply, nil
@@ -188,7 +188,7 @@ func StatusNetworkNode() (string, error) {
 	// Synchronous call using positional params and TCP.
 	err := clientHTTP.Call("GladiusEdge.Status", nil, &reply)
 	if err != nil {
-		return "", utils.HandleError(err, "", "node.StatusNetworkNode")
+		return "", utils.HandleError(err, "Error communicating with the node networking daemon. Make sure it's running!", "node.StatusNetworkNode")
 	}
 
 	return reply, nil
