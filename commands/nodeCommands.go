@@ -92,12 +92,12 @@ func createNewNode(cmd *cobra.Command, args []string) {
 
 	// check balance before they start
 	balance, err := utils.CheckBalance(acc, "eth")
-	if balance < 0.1 {
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Warning("Account balance low (ETH)")
-	}
 	if balance == 0 {
 		zero := utils.HandleError(fmt.Errorf("Account has no ether"), "You have no funds! Please add test ether to your account!", "nodeCommands.createNewNode")
 		utils.PrintError(zero)
+	}
+	if balance < 0.1 {
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Warning("Account balance low (ETH)")
 	}
 	if err != nil {
 		utils.PrintError(err)
