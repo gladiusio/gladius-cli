@@ -1,68 +1,72 @@
 package keystore
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/gladiusio/gladius-cli/utils"
 	"github.com/mgutz/ansi"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-// CreateWallet - create a new wallet with passphrase
-func CreateWallet() error {
-	url := "http://localhost:3001/api/keystore/wallet/create"
+// CreateAccount - create a new account with passphrase
+func CreateAccount() (string, error) {
+	url := "http://localhost:3001/api/keystore/account/create"
 
-	// make a new passphrase for this wallet
+	// make a new passphrase for this account
 	password := utils.NewPassphrase()
 	pass := make(map[string]string)
 	pass["passphrase"] = password
 
 	utils.CachePassphrase(password)
-
+	log.WithFields(log.Fields{"file": "wallet.go", "func": "CreateAccount"}).Debug("POST: ", url)
 	res, err := utils.SendRequest("POST", url, pass)
 	if err != nil {
-		return fmt.Errorf("%v/keystore.CreateWallet", err)
+		return "", utils.HandleError(err, "", "wallet.CreateAccount")
 	}
 
+	log.WithFields(log.Fields{"file": "wallet.go", "func": "CreateAccount"}).Debug("Response recieved, piping through the response handler")
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return fmt.Errorf("%v/keystore.CreateWallet", err)
+		return "", utils.HandleError(err, "", "walle.CreateAccount")
 	}
 
+	log.WithFields(log.Fields{"file": "wallet.go", "func": "CreateAccount"}).Debug("Decoding response fields")
 	response := api.Response.(map[string]interface{})
 	address := response["address"].(string)
 
 	fmt.Println()
-	terminal.Println(ansi.Color("Wallet Address:", "83+hb"), ansi.Color(address, "255+hb"))
+	terminal.Println(ansi.Color("Account Address:", "83+hb"), ansi.Color(address, "255+hb"))
 
-	return nil
+	return "Account created", nil
 }
 
 // GetAccounts - get accounts at the standard config path
-func GetAccounts() ([]interface{}, error) {
-	url := "http://localhost:3001/api/keystore/wallets"
+func GetAccounts() (string, error) {
+	url := "http://localhost:3001/api/keystore/account"
 
+	log.WithFields(log.Fields{"file": "wallet.go", "func": "GetAccounts"}).Debug("POST: ", url)
 	res, err := utils.SendRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("%v/keystore.GetAccounts", err)
+		return "", utils.HandleError(err, "", "wallet.GetAccounts")
 	}
 
+	log.WithFields(log.Fields{"file": "wallet.go", "func": "GetAccounts"}).Debug("Response recieved, piping through the response handler")
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return nil, fmt.Errorf("%v/keystore.GetAccounts", err)
+		return "", utils.HandleError(err, "", "wallet.GetAccounts")
 	}
 
-	response := api.Response.([]interface{})
-
+	log.WithFields(log.Fields{"file": "wallet.go", "func": "GetAccounts"}).Debug("Decoding response fields")
+	response := api.Response.(map[string]interface{})
 	if len(response) < 1 {
-		return nil, errors.New("No accounts found. Please create a wallet with: gladius create")
+		return "", utils.HandleError(err, "", "wallet.GetAccounts")
 	}
 
-	return response, nil
+	return response["address"].(string), nil
 }
 
-// EnsureAccount - Make sure they have a wallet
+// EnsureAccount - make sure they have an account
 func EnsureAccount() (bool, error) {
 	_, err := GetAccounts()
 	if err != nil {

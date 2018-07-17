@@ -6,12 +6,18 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
-	"github.com/BurntSushi/toml"
+	"github.com/mgutz/ansi"
+	log "github.com/sirupsen/logrus"
 	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
+
+// LogLevel - What kind of logs to show (1 = Debug and above, 2 = Info and above, 3 = Warnings and above, 4 = Fatal)
+var LogLevel int
 
 // APIResponse - standard response from the control daemon api
 type APIResponse struct {
@@ -19,7 +25,25 @@ type APIResponse struct {
 	Success  bool        `json:"success"`
 	Error    string      `json:"error"`
 	Response interface{} `json:"response"`
+	TxHash   interface{} `json:"txHash"`
 	Endpoint string      `json:"endpoint"`
+}
+
+// ErrorResponse - custom error struct
+type ErrorResponse struct {
+	UserMessage string
+	LogError    string
+	Path        string
+}
+
+// Error - for the dev/logger
+func (e *ErrorResponse) Error() string {
+	return e.LogError
+}
+
+// Message - for the user
+func (e *ErrorResponse) Message() string {
+	return e.UserMessage
 }
 
 // For control over HTTP client headers,
@@ -31,7 +55,8 @@ var client = &http.Client{
 
 var cachedPassphrase string
 
-// SendRequest - custom function to make sending request less of a pain in the arse
+// SendRequest - custom function to make sending api requests less of a pain
+// in the arse.
 func SendRequest(requestType, url string, data interface{}) (string, error) {
 
 	b := bytes.Buffer{}
@@ -40,7 +65,7 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 	if data != nil {
 		jsonPayload, err := json.Marshal(data)
 		if err != nil {
-			return "", fmt.Errorf("%v:json.Marshall/utils.sendRequest", err)
+			return "", HandleError(err, "Invalid Data", ":json.Marshall/SendRequest")
 		}
 		b = *bytes.NewBuffer(jsonPayload)
 	}
@@ -48,7 +73,7 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 	// Build the request
 	req, err := http.NewRequest(requestType, url, &b)
 	if err != nil {
-		return "", fmt.Errorf("%v:http.NewRequest/utils.SendRequest", err)
+		return "", HandleError(err, "Could not build request", ":http.NewRequest/SendRequest")
 	}
 
 	req.Header.Set("User-Agent", "gladius-cli")
@@ -69,13 +94,13 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 	// Send the request via a client
 	res, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("%v:client.Do/utils.SendRequest", err)
+		return "", HandleError(err, "Could not send request", ":client.Do/SendRequest")
 	}
 
 	// read the body of the response
 	body, readErr := ioutil.ReadAll(res.Body)
 	if readErr != nil {
-		return "", fmt.Errorf("%v:ioutil.ReadAll/utils.SendRequest", err)
+		return "", HandleError(err, "Could not build request", ":ioutil.ReadAll/SendRequest")
 	}
 
 	// Defer the closing of the body
@@ -84,18 +109,19 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 	return string(body), nil //tx
 }
 
-// CheckTx - check status of tx hash
+// CheckTx - check status of tx.
+// Perform a single check on a tx.
 func CheckTx(tx string) (bool, error) {
 	url := fmt.Sprintf("http://localhost:3001/api/status/tx/%s", tx)
 
 	res, err := SendRequest("GET", url, nil)
 	if err != nil {
-		return false, fmt.Errorf("%v/utils.CheckTx", err)
+		return false, HandleError(err, "", "utils.CheckTx")
 	}
 
 	api, err := ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return false, fmt.Errorf("%v/utils.CheckTx", err)
+		return false, HandleError(err, "", "utils.CheckTx")
 	}
 
 	response := api.Response.(map[string]interface{})
@@ -107,7 +133,8 @@ func CheckTx(tx string) (bool, error) {
 	return response["complete"].(bool), nil // tx completion status
 }
 
-// WaitForTx - wait for the tx to complete
+// WaitForTx - wait for a tx on the blockchain to complete.
+// Queries the API every second to see if tx is complete.
 func WaitForTx(tx string) (bool, error) {
 	ticker := time.NewTicker(1 * time.Second)
 	quit := make(chan error) // this is the exit condition channel
@@ -145,13 +172,32 @@ func WaitForTx(tx string) (bool, error) {
 	}()
 
 	err := <-quit
-
 	if err != nil {
-		return false, fmt.Errorf("%v/utils.WaitForTx", err)
+		return false, HandleError(err, "", "utils.WaitForTx")
 	}
 
 	fmt.Printf("\nTx: %s\t Status: Successful\n", tx)
 	return true, nil
+}
+
+// CheckBalance - check SYMBOL balance of account
+func CheckBalance(address, symbol string) (float64, error) {
+	url := fmt.Sprintf("http://localhost:3001/api/account/%s/balance/%s", address, symbol)
+
+	res, err := SendRequest("GET", url, nil)
+	if err != nil {
+		return 0, HandleError(err, "", "utils.CheckBalance")
+	}
+
+	api, err := ControlDaemonHandler([]byte(res))
+	if err != nil {
+		return 0, HandleError(err, "", "utils.CheckBalance")
+	}
+
+	response := api.Response.(map[string]interface{})
+	balance := response["value"].(float64)
+
+	return balance, nil // value of $SYMBOL in account
 }
 
 // ControlDaemonHandler - handler for the API responses
@@ -160,19 +206,43 @@ func ControlDaemonHandler(_res []byte) (APIResponse, error) {
 
 	err := json.Unmarshal(_res, &response)
 	if err != nil {
-		return APIResponse{}, fmt.Errorf("%v:json.Unmarshall/utils.ControlDaemonHandler", err)
+		return APIResponse{}, HandleError(err, "Invalid server response", ":json.Unmarshall/utils.ControlDaemonHandler")
 	}
 
 	if !response.Success {
-		return APIResponse{}, fmt.Errorf("%s:utils.ControlDaemonHandler", response.Message)
+		return APIResponse{}, HandleError(fmt.Errorf(response.Error), response.Message, ":APIResponse/utils.ControlDaemonHandler")
 	}
 
 	return response, nil
 }
 
-// GetIP - Retrieve the current machine's external IP address
-func GetIP() (string, error) {
+// HandleError - custom error handler for the CLI.
+// Uses ResponseError as a means of keeping 2 seperate error messages.
+// UserMessage is a message to display to a user when an error occurs.
+// LogError is a message to log or display to a developer.
+// Path is the error path which is up to the developer to include.
+func HandleError(err error, msg, path string) error {
+	if err, ok := err.(*ErrorResponse); ok {
+		return &ErrorResponse{UserMessage: err.Message() + msg, LogError: err.Error(), Path: err.Path + "/" + path}
+	}
+	return &ErrorResponse{UserMessage: msg, LogError: fmt.Sprint(err), Path: path}
+}
 
+// PrintError - print and logs ReponseError's.
+// Use this to println the UserMessage and log the LogError with correct path.
+func PrintError(err error) {
+	if err, ok := err.(*ErrorResponse); ok {
+		terminal.Print(ansi.Color("[ERROR] ", "196+hb"))
+		terminal.Println(ansi.Color(err.Message(), "255+hb"))
+		log.WithFields(log.Fields{"path": err.Path}).Fatal(err.LogError)
+	} else {
+		fmt.Println(err)
+	}
+}
+
+// GetIP - Retrieve the current machine's external IPv4 address
+// using multiple ip API's.
+func GetIP() (string, error) {
 	sites := [4]string{"https://ipv4.myexternalip.com/raw", "https://api.ipify.org/?format=text", "https://ident.me/", "https://ipv4bot.whatismyipaddress.com"}
 
 	for _, site := range sites {
@@ -181,10 +251,10 @@ func GetIP() (string, error) {
 			return res, nil
 		}
 	}
-	return "", fmt.Errorf("%s:utils.GetIP", "Something went wrong getting this machines IP address")
+	return "", HandleError(fmt.Errorf("Could not retrieve IP address"), "Something went wrong getting this machines IP address", ":utils.GetIP")
 }
 
-// NewPassphrase - make a new password and confirm
+// NewPassphrase - prompts user for new passphrase and confirms it.
 func NewPassphrase() string {
 	password1 := ""
 	prompt := &survey.Password{
@@ -206,7 +276,7 @@ func NewPassphrase() string {
 	return password1
 }
 
-// AskPassphrase - ask for users password
+// AskPassphrase - prompt user for passphrase.
 func AskPassphrase() string {
 	password := ""
 	prompt := &survey.Password{
@@ -216,65 +286,28 @@ func AskPassphrase() string {
 	return password
 }
 
-// CachePassphrase - cache the passphrase so you don't have to enter it
+// CachePassphrase - cache passphrase so user's don't have to retype it every
+// time in the same command.
 func CachePassphrase(passphrase string) {
 	cachedPassphrase = passphrase
 }
 
-// ############ DEPRECATED ############
-
-// GetEnvMap - custom function to return a mapping of the environment file (has to be .toml)
-// this technically works but reading from *.toml is deprecated
-func GetEnvMap(filename string) (map[string]map[string]string, error) {
-	// read env file
-	b, err := ioutil.ReadFile(filename)
-	if err != nil {
-		fmt.Println("Error reading: " + filename)
-		return nil, err
+// SetLogLevel - Sets the appropriate logging level.
+// 1 = Debug < , 2 = Info <, 3 = Warning <, 4 = Fatal.
+func SetLogLevel(level int) {
+	switch level {
+	case 1:
+		log.SetLevel(log.DebugLevel)
+	case 2:
+		log.SetLevel(log.InfoLevel)
+	case 3:
+		log.SetLevel(log.WarnLevel)
+	default:
+		log.SetLevel(log.FatalLevel)
 	}
-
-	// decode the file and put it into envFile
-	var envFile = make(map[string]map[string]string)
-
-	if _, err := toml.Decode(string(b), &envFile); err != nil {
-		fmt.Println("Error decoding")
-		return nil, err
-	}
-
-	return envFile, nil
 }
 
-// WriteToEnv - custom function to return a mapping of the environment file (has to be .toml)
-// this technically works but writing to *.toml is deprecated
-func WriteToEnv(section, key, value, source, destination string) error {
-	// read the file
-	b, err := ioutil.ReadFile(source)
-	if err != nil {
-		fmt.Println("Error reading: " + source)
-		return err
-	}
-
-	// decode and put it into the mapping
-	var envFile = make(map[string]map[string]string)
-	if _, err = toml.Decode(string(b), &envFile); err != nil {
-		fmt.Println("Error decoding")
-	}
-
-	// add a new {key : value} pair
-	envFile[section][key] = value
-
-	// re-encode the mapping
-	buf := new(bytes.Buffer)
-	if err = toml.NewEncoder(buf).Encode(envFile); err != nil {
-		fmt.Println("Error encoding")
-		return err
-	}
-
-	// re-write the file
-	if err = ioutil.WriteFile(destination, (*buf).Bytes(), 0644); err != nil {
-		fmt.Println("Error writing to file")
-		return err
-	}
-
-	return nil
+// ClearLogger - Clears log file after every run.
+func ClearLogger() {
+	os.Remove("./log")
 }

@@ -5,29 +5,29 @@ import (
 
 	"github.com/gladiusio/gladius-cli/utils"
 	"github.com/powerman/rpc-codec/jsonrpc2"
+	log "github.com/sirupsen/logrus"
 )
 
-// Test - random test function
-func Test() {
-}
-
-// CreateNode - create a Node contract
+// CreateNode - create a Node contract using controld api.
 func CreateNode() (string, error) {
 	url := "http://localhost:3001/api/node/create"
 
+	log.WithFields(log.Fields{"file": "node.go", "func": "CreateNode"}).Debug("POST: ", url)
 	// use the custom sendRequest to send something to the control daemon api
 	res, err := utils.SendRequest("POST", url, nil)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.CreateNode", err)
+		return "", utils.HandleError(err, "", "node.CreateNode")
 	}
 
+	log.WithFields(log.Fields{"file": "node.go", "func": "CreateNode"}).Debug("Response recieved, piping through the response handler")
+	// handle api response
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return "", fmt.Errorf("%v/node.CreateNode", err)
+		return "", utils.HandleError(err, "", "node.CreateNode")
 	}
 
-	response := api.Response.(map[string]interface{})
-	txHash := response["txHash"].(map[string]interface{})
+	log.WithFields(log.Fields{"file": "node.go", "func": "CreateNode"}).Debug("Decoding response fields")
+	txHash := api.TxHash.(map[string]interface{})
 
 	return txHash["value"].(string), nil //tx hash
 }
@@ -36,94 +36,109 @@ func CreateNode() (string, error) {
 func GetNodeAddress() (string, error) {
 	url := "http://localhost:3001/api/node/"
 
+	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeAddress"}).Debug("GET: ", url)
 	res, err := utils.SendRequest("GET", url, nil)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.GetNodeAddress", err)
+		return "", utils.HandleError(err, "", "node.GetNodeAddress")
 	}
 
+	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeAddress"}).Debug("Response recieved, piping through the response handler")
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return "", fmt.Errorf("%v/node.GetNodeAddress", err)
+		return "", utils.HandleError(err, "", "node.GetNodeAddress")
 	}
 
-	address := api.Response.(string)
+	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeAddress"}).Debug("Decoding response fields")
+	response := api.Response.(map[string]interface{})
+	address := response["address"].(string)
 
 	return address, nil //node address
 }
 
-// GetNodeData - get node address from owner lookup
+// GetNodeData - get node data from owner lookup
 func GetNodeData(address string) (map[string]interface{}, error) {
 	url := "http://localhost:3001/api/node/" + address + "/data"
 
+	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeData"}).Debug("GET: ", url)
 	res, err := utils.SendRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("%v/node.GetNodeAddress", err)
+		return nil, utils.HandleError(err, "", "node.GetNodeData")
 	}
 
+	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeData"}).Debug("Response recieved, piping through the response handler")
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return nil, fmt.Errorf("%v/node.GetNodeAddress", err)
+		return nil, utils.HandleError(err, "", "node.GetNodeData")
 	}
 
+	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeData"}).Debug("Decoding response fields")
 	response := api.Response.(map[string]interface{})
+	data := response["data"].(map[string]interface{})
 
-	return response, nil //node data
+	return data, nil //node data
 }
 
 // SetNodeData - set data for a Node contract
 func SetNodeData(nodeAddress string, data map[string]interface{}) (string, error) {
 	url := fmt.Sprintf("http://localhost:3001/api/node/%s/data", nodeAddress)
 
+	log.WithFields(log.Fields{"file": "node.go", "func": "SetNodeData"}).Debug("POST: ", url)
 	res, err := utils.SendRequest("POST", url, data)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.SetNodeData", err)
+		return "", utils.HandleError(err, "", "node.SetNodeData")
 	}
 
+	log.WithFields(log.Fields{"file": "node.go", "func": "SetNodeData"}).Debug("Response recieved, piping through the response handler")
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return "", fmt.Errorf("%v/node.SetNodeData", err)
+		return "", utils.HandleError(err, "", "node.SetNodeData")
 	}
 
-	response := api.Response.(map[string]interface{})
-	txHash := response["txHash"].(map[string]interface{})
+	log.WithFields(log.Fields{"file": "node.go", "func": "SetNodeData"}).Debug("Decoding response fields")
+	txHash := api.TxHash.(map[string]interface{})
 
 	return txHash["value"].(string), nil //tx hash
 }
 
-// ApplyToPool - apply to a pool [Need to implement new API]
+// ApplyToPool - apply to a pool
 func ApplyToPool(nodeAddress, poolAddress string) (string, error) {
 	url := fmt.Sprintf("http://localhost:3001/api/node/%s/apply/%s", nodeAddress, poolAddress)
 
+	log.WithFields(log.Fields{"file": "node.go", "func": "ApplyToPool"}).Debug("POST: ", url)
 	res, err := utils.SendRequest("POST", url, nil)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.ApplyToPool", err)
+		return "", utils.HandleError(err, "", "node.AppyToPool")
 	}
 
+	log.WithFields(log.Fields{"file": "node.go", "func": "ApplyToPool"}).Debug("Response recieved, piping through the response handler")
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return "", fmt.Errorf("%v/node.CreateNode", err)
+		return "", utils.HandleError(err, "", "node.AppyToPool")
 	}
 
-	response := api.Response.(map[string]interface{})
-	txHash := response["txHash"].(map[string]interface{})
+	log.WithFields(log.Fields{"file": "node.go", "func": "ApplyToPool"}).Debug("Decoding response fields")
+	txHash := api.TxHash.(map[string]interface{})
 
 	return txHash["value"].(string), nil //tx hash
 }
 
-// CheckPoolApplication - check the status of your pool application [Need to implement new API]
+// CheckPoolApplication - check the status of your pool application
 func CheckPoolApplication(nodeAddress, poolAddress string) (string, error) {
 	url := fmt.Sprintf("http://localhost:3001/api/node/%s/application/%s", nodeAddress, poolAddress)
 
+	log.WithFields(log.Fields{"file": "node.go", "func": "CheckPoolApplication"}).Debug("GET: ", url)
 	res, err := utils.SendRequest("GET", url, nil)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.CheckPoolApplication", err)
+		return "", utils.HandleError(err, "", "node.CheckPoolApplication")
 	}
 
+	log.WithFields(log.Fields{"file": "node.go", "func": "CheckPoolApplication"}).Debug("Response recieved, piping through the response handler")
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
-		return "", fmt.Errorf("%v/node.CheckPoolApplication", err)
+		return "", utils.HandleError(err, "", "node.CheckPoolApplication")
 	}
 
+	log.WithFields(log.Fields{"file": "node.go", "func": "CheckPoolApplication"}).Debug("Decoding response fields")
 	response := api.Response.(map[string]interface{})
 	status := response["status"].(string)
 	return status, nil // pool status
@@ -140,7 +155,7 @@ func StartNetworkNode() (string, error) {
 	// Synchronous call using positional params and TCP.
 	err := clientHTTP.Call("GladiusEdge.Start", nil, &reply)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.StopNetworkNode", err)
+		return "", utils.HandleError(err, "Error starting the node networking daemon. Make sure it's running!", "node.StartNetworkNode")
 	}
 	return reply, nil
 }
@@ -156,7 +171,7 @@ func StopNetworkNode() (string, error) {
 	// Synchronous call using positional params and TCP.
 	err := clientHTTP.Call("GladiusEdge.Stop", nil, &reply)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.StopNetworkNode", err)
+		return "", utils.HandleError(err, "Error stopping the node networking daemon. Make sure it's running!", "node.StopNetworkNode")
 	}
 
 	return reply, nil
@@ -173,7 +188,7 @@ func StatusNetworkNode() (string, error) {
 	// Synchronous call using positional params and TCP.
 	err := clientHTTP.Call("GladiusEdge.Status", nil, &reply)
 	if err != nil {
-		return "", fmt.Errorf("%v/node.StatusNetworkNode", err)
+		return "", utils.HandleError(err, "Error communicating with the node networking daemon. Make sure it's running!", "node.StatusNetworkNode")
 	}
 
 	return reply, nil
