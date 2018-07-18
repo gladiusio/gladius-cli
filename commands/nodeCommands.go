@@ -12,6 +12,7 @@ import (
 	"github.com/mgutz/ansi"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	surveyCore "gopkg.in/AlecAivazis/survey.v1/core"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -441,9 +442,20 @@ func profile(cmd *cobra.Command, args []string) {
 }
 
 func test(cmd *cobra.Command, args []string) {
-	customError := utils.ErrorResponse{UserMessage: "MSG", LogError: "LOG", Path: "PATH"}
-	err := utils.HandleError(&customError, "msg2", "path2")
-	utils.PrintError(err)
+	pathTemp := viper.GetString("DirLogs")
+
+	// os.MkdirAll(pathTemp, os.ModePerm)
+	println(pathTemp)
+
+	// err := os.Chdir(pathTemp)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	//
+	// _, err = os.OpenFile("test", os.O_CREATE|os.O_WRONLY, 0666)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
 }
 
 func init() {
