@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -15,9 +14,6 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
-
-// LogLevel - What kind of logs to show (1 = Debug and above, 2 = Info and above, 3 = Warnings and above, 4 = Fatal)
-var LogLevel int
 
 // APIResponse - standard response from the control daemon api
 type APIResponse struct {
@@ -290,24 +286,4 @@ func AskPassphrase() string {
 // time in the same command.
 func CachePassphrase(passphrase string) {
 	cachedPassphrase = passphrase
-}
-
-// SetLogLevel - Sets the appropriate logging level.
-// 1 = Debug < , 2 = Info <, 3 = Warning <, 4 = Fatal.
-func SetLogLevel(level int) {
-	switch level {
-	case 1:
-		log.SetLevel(log.DebugLevel)
-	case 2:
-		log.SetLevel(log.InfoLevel)
-	case 3:
-		log.SetLevel(log.WarnLevel)
-	default:
-		log.SetLevel(log.FatalLevel)
-	}
-}
-
-// ClearLogger - Clears log file after every run.
-func ClearLogger() {
-	os.Remove("./log")
 }

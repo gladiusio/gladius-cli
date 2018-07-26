@@ -8,10 +8,10 @@
   version = "v1.4.7"
 
 [[projects]]
-  branch = "master"
+  branch = "feature/base-flags"
   name = "github.com/gladiusio/gladius-utils"
   packages = ["config"]
-  revision = "b674955188e8a25375ac467b95d66c7be4294a74"
+  revision = "fe36ee1cf0e97644092b437c28db9af3758c3303"
 
 [[projects]]
   branch = "master"
@@ -170,6 +170,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7c962ae339729d45841603dc5901637fcdf18c546eeeed2d19b76c2fe65148e1"
+  inputs-digest = "06b948caff40ed1a2d32efe8e0947299fcff20e42a64b84004e8ae7e4cecbbd4"
   solver-name = "gps-cdcl"
   solver-version = 1

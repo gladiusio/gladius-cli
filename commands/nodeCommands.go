@@ -3,7 +3,6 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"os"
 	"regexp"
 
 	"github.com/gladiusio/gladius-cli/keystore"
@@ -12,16 +11,10 @@ import (
 	"github.com/mgutz/ansi"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	surveyCore "gopkg.in/AlecAivazis/survey.v1/core"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
-
-// LogFile - Where the logs are stored
-var LogFile *os.File
-
-// var reset bool
 
 var cmdCreate = &cobra.Command{
 	Use:   "create",
@@ -68,7 +61,7 @@ var cmdTest = &cobra.Command{
 // collect user info, create node, set node data
 func createNewNode(cmd *cobra.Command, args []string) {
 	utils.SetLogLevel(utils.LogLevel)
-	defer LogFile.Close()
+	defer utils.LogFile.Close()
 
 	// make sure they have a account, if they dont, make one
 	account, _ := keystore.EnsureAccount()
@@ -239,7 +232,7 @@ func createNewNode(cmd *cobra.Command, args []string) {
 // send data to pool
 func applyToPool(cmd *cobra.Command, args []string) {
 	utils.SetLogLevel(utils.LogLevel)
-	defer LogFile.Close()
+	defer utils.LogFile.Close()
 
 	// make sure they have a account, if they dont, make one
 	account, _ := keystore.EnsureAccount()
@@ -313,7 +306,7 @@ func applyToPool(cmd *cobra.Command, args []string) {
 // check the application of the node
 func checkPoolApp(cmd *cobra.Command, args []string) {
 	utils.SetLogLevel(utils.LogLevel)
-	defer LogFile.Close()
+	defer utils.LogFile.Close()
 
 	// build question
 	var qs = []*survey.Question{
@@ -363,7 +356,7 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 // start or stop the node daemon
 func network(cmd *cobra.Command, args []string) {
 	utils.SetLogLevel(utils.LogLevel)
-	defer LogFile.Close()
+	defer utils.LogFile.Close()
 
 	if len(args) == 0 {
 		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Fatal("Please use: \ngladius node start\ngladius node stop\ngladius node status")
@@ -409,7 +402,7 @@ func network(cmd *cobra.Command, args []string) {
 // get a users profile
 func profile(cmd *cobra.Command, args []string) {
 	utils.SetLogLevel(utils.LogLevel)
-	defer LogFile.Close()
+	defer utils.LogFile.Close()
 
 	account, err := keystore.GetAccounts()
 	if err != nil {
@@ -442,20 +435,13 @@ func profile(cmd *cobra.Command, args []string) {
 }
 
 func test(cmd *cobra.Command, args []string) {
-	pathTemp := viper.GetString("DirLogs")
+	utils.SetLogLevel(utils.LogLevel)
+	defer utils.LogFile.Close()
 
-	// os.MkdirAll(pathTemp, os.ModePerm)
-	println(pathTemp)
-
-	// err := os.Chdir(pathTemp)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	//
-	// _, err = os.OpenFile("test", os.O_CREATE|os.O_WRONLY, 0666)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "Test"}).Debug("DEBUG")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "Test"}).Info("INFO")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "Test"}).Warning("WARNING")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "Test"}).Fatal("FATAL")
 }
 
 func init() {
@@ -473,15 +459,4 @@ func init() {
 	// cmdCreate.Flags().BoolVarP(&reset, "reset", "r", false, "reset wallet")
 	// rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug mode")
 	rootCmd.PersistentFlags().IntVarP(&utils.LogLevel, "level", "l", 2, "set the logging level")
-
-	// clear previous log file
-	utils.ClearLogger()
-
-	LogFile, err := os.OpenFile("log", os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		log.Warning("Failed to log to file, using default stderr")
-	}
-
-	log.SetOutput(LogFile)
-
 }

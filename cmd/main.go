@@ -1,13 +1,24 @@
 package main
 
 import (
+	"log"
+
 	"github.com/gladiusio/gladius-cli/commands"
+	"github.com/gladiusio/gladius-cli/utils"
 	"github.com/gladiusio/gladius-utils/config"
 )
 
 // execute the command the user typed
 func main() {
-	// Setup config handling
-	config.SetupConfig("gladius-controld", config.ControlDaemonDefaults())
+	// setup config handling
+	config.SetupConfig("gladius-cli", config.CLIDefaults())
+
+	// setup logger
+	err := utils.SetupLogger()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// execute the cmd args
 	commands.Execute()
 }
