@@ -32,6 +32,11 @@ type ErrorResponse struct {
 	Path        string
 }
 
+var cachedPassphrase string
+
+// RequestTimeout - Request timeout in seconds
+var RequestTimeout int
+
 // Error - for the dev/logger
 func (e *ErrorResponse) Error() string {
 	return e.LogError
@@ -46,10 +51,8 @@ func (e *ErrorResponse) Message() string {
 // redirect policy, and other settings,
 // create an HTTP client
 var client = &http.Client{
-	Timeout: time.Second * 10, //10 second timeout
+	Timeout: time.Second * time.Duration(RequestTimeout),
 }
-
-var cachedPassphrase string
 
 // SendRequest - custom function to make sending api requests less of a pain
 // in the arse.

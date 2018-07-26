@@ -459,4 +459,5 @@ func init() {
 	// cmdCreate.Flags().BoolVarP(&reset, "reset", "r", false, "reset wallet")
 	// rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug mode")
 	rootCmd.PersistentFlags().IntVarP(&utils.LogLevel, "level", "l", 2, "set the logging level")
+	rootCmd.PersistentFlags().IntVarP(&utils.RequestTimeout, "timeout", "t", 10, "set the timeout for requests in seconds")
 }
