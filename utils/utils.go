@@ -102,8 +102,6 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 		return "", HandleError(err, "Could not build request", ":ioutil.ReadAll/SendRequest")
 	}
 
-	println("SEND REQUEST: ", string(body))
-
 	// Defer the closing of the body
 	defer res.Body.Close()
 
@@ -237,7 +235,9 @@ func PrintError(err error) {
 		terminal.Println(ansi.Color(err.Message(), "255+hb"))
 		log.WithFields(log.Fields{"path": err.Path}).Fatal(err.LogError)
 	} else {
-		fmt.Println(err)
+		terminal.Print(ansi.Color("[ERROR] ", "196+hb"))
+		terminal.Println(ansi.Color(err.Error(), "255+hb"))
+		log.Fatal(err.Error())
 	}
 }
 

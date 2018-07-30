@@ -8,64 +8,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// CreateNode - create a Node contract using controld api.
-func CreateNode() (string, error) {
-	url := "http://localhost:3001/api/node/create"
+// GetApplication- get node application from pool
+func GetApplication(address string) (map[string]interface{}, error) {
+	url := fmt.Sprintf("http://localhost:3001/api/node/applications/%s/view", address)
 
-	log.WithFields(log.Fields{"file": "node.go", "func": "CreateNode"}).Debug("POST: ", url)
-	// use the custom sendRequest to send something to the control daemon api
-	res, err := utils.SendRequest("POST", url, nil)
-	if err != nil {
-		return "", utils.HandleError(err, "", "node.CreateNode")
-	}
-
-	log.WithFields(log.Fields{"file": "node.go", "func": "CreateNode"}).Debug("Response recieved, piping through the response handler")
-	// handle api response
-	api, err := utils.ControlDaemonHandler([]byte(res))
-	if err != nil {
-		return "", utils.HandleError(err, "", "node.CreateNode")
-	}
-
-	log.WithFields(log.Fields{"file": "node.go", "func": "CreateNode"}).Debug("Decoding response fields")
-	txHash := api.TxHash.(map[string]interface{})
-
-	return txHash["value"].(string), nil //tx hash
-}
-
-// GetNodeAddress - get node address from owner lookup
-func GetNodeAddress() (string, error) {
-	url := "http://localhost:3001/api/node/"
-
-	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeAddress"}).Debug("GET: ", url)
-	res, err := utils.SendRequest("GET", url, nil)
-	if err != nil {
-		return "", utils.HandleError(err, "", "node.GetNodeAddress")
-	}
-
-	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeAddress"}).Debug("Response recieved, piping through the response handler")
-	api, err := utils.ControlDaemonHandler([]byte(res))
-	if err != nil {
-		return "", utils.HandleError(err, "", "node.GetNodeAddress")
-	}
-
-	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeAddress"}).Debug("Decoding response fields")
-	response := api.Response.(map[string]interface{})
-	address := response["address"].(string)
-
-	return address, nil //node address
-}
-
-// GetNodeData - get node data from owner lookup
-func GetNodeData(address string) (map[string]interface{}, error) {
-	url := "http://localhost:3001/api/node/" + address + "/data"
-
-	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeData"}).Debug("GET: ", url)
+	log.WithFields(log.Fields{"file": "node.go", "func": "GetApplication"}).Debug("GET: ", url)
 	res, err := utils.SendRequest("GET", url, nil)
 	if err != nil {
 		return nil, utils.HandleError(err, "", "node.GetNodeData")
 	}
 
-	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeData"}).Debug("Response recieved, piping through the response handler")
+	log.WithFields(log.Fields{"file": "node.go", "func": "GetApplication"}).Debug("Response recieved, piping through the response handler")
 	api, err := utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
 		return nil, utils.HandleError(err, "", "node.GetNodeData")
@@ -73,31 +26,9 @@ func GetNodeData(address string) (map[string]interface{}, error) {
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "GetNodeData"}).Debug("Decoding response fields")
 	response := api.Response.(map[string]interface{})
-	data := response["data"].(map[string]interface{})
+	data := response["profile"].(map[string]interface{})
 
 	return data, nil //node data
-}
-
-// SetNodeData - set data for a Node contract
-func SetNodeData(nodeAddress string, data map[string]interface{}) (string, error) {
-	url := fmt.Sprintf("http://localhost:3001/api/node/%s/data", nodeAddress)
-
-	log.WithFields(log.Fields{"file": "node.go", "func": "SetNodeData"}).Debug("POST: ", url)
-	res, err := utils.SendRequest("POST", url, data)
-	if err != nil {
-		return "", utils.HandleError(err, "", "node.SetNodeData")
-	}
-
-	log.WithFields(log.Fields{"file": "node.go", "func": "SetNodeData"}).Debug("Response recieved, piping through the response handler")
-	api, err := utils.ControlDaemonHandler([]byte(res))
-	if err != nil {
-		return "", utils.HandleError(err, "", "node.SetNodeData")
-	}
-
-	log.WithFields(log.Fields{"file": "node.go", "func": "SetNodeData"}).Debug("Decoding response fields")
-	txHash := api.TxHash.(map[string]interface{})
-
-	return txHash["value"].(string), nil //tx hash
 }
 
 // ApplyToPool - apply to a pool
@@ -109,8 +40,6 @@ func ApplyToPool(poolAddress string, data map[string]interface{}) (string, error
 	if err != nil {
 		return "", utils.HandleError(err, "", "node.AppyToPool")
 	}
-
-	println("RESPONSE OF SERVER", res)
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "ApplyToPool"}).Debug("Response recieved, piping through the response handler")
 	_, err = utils.ControlDaemonHandler([]byte(res))
@@ -124,25 +53,24 @@ func ApplyToPool(poolAddress string, data map[string]interface{}) (string, error
 }
 
 // CheckPoolApplication - check the status of your pool application
-func CheckPoolApplication(nodeAddress, poolAddress string) (string, error) {
-	url := fmt.Sprintf("http://localhost:3001/api/node/%s/application/%s", nodeAddress, poolAddress)
-
-	log.WithFields(log.Fields{"file": "node.go", "func": "CheckPoolApplication"}).Debug("GET: ", url)
-	res, err := utils.SendRequest("GET", url, nil)
+func CheckPoolApplication(poolAddress string) (string, error) {
+	application, err := GetApplication(poolAddress)
 	if err != nil {
 		return "", utils.HandleError(err, "", "node.CheckPoolApplication")
 	}
 
-	log.WithFields(log.Fields{"file": "node.go", "func": "CheckPoolApplication"}).Debug("Response recieved, piping through the response handler")
-	api, err := utils.ControlDaemonHandler([]byte(res))
-	if err != nil {
-		return "", utils.HandleError(err, "", "node.CheckPoolApplication")
+	valid := application["Valid"].(bool)
+	accepted := application["Bool"].(bool)
+
+	if valid {
+		if accepted {
+			return "Accepted", nil
+		}
+	} else {
+		return "Pending", nil
 	}
 
-	log.WithFields(log.Fields{"file": "node.go", "func": "CheckPoolApplication"}).Debug("Decoding response fields")
-	response := api.Response.(map[string]interface{})
-	status := response["status"].(string)
-	return status, nil // pool status
+	return "Rejected", nil
 }
 
 // StartNetworkNode - start networking node server
