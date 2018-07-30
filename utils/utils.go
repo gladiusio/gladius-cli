@@ -102,6 +102,8 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 		return "", HandleError(err, "Could not build request", ":ioutil.ReadAll/SendRequest")
 	}
 
+	println("SEND REQUEST: ", string(body))
+
 	// Defer the closing of the body
 	defer res.Body.Close()
 
@@ -289,4 +291,17 @@ func AskPassphrase() string {
 // time in the same command.
 func CachePassphrase(passphrase string) {
 	cachedPassphrase = passphrase
+}
+
+// Version - print version of each module
+func Version() {
+
+	res, err := SendRequest("GET", "localhost:8080/status", nil)
+	if err != nil {
+		PrintError(err)
+	}
+
+	terminal.Println(ansi.Color("CLI: ", "83+hb"), ansi.Color("0.4.0", "255+hb"))
+	terminal.Println(ansi.Color("Control Daemon: ", "83+hb"), ansi.Color("0.4.0", "255+hb"))
+	terminal.Println(ansi.Color("Network Daemon: ", "83+hb"), ansi.Color(res, "255+hb"))
 }

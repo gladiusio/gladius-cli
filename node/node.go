@@ -101,25 +101,26 @@ func SetNodeData(nodeAddress string, data map[string]interface{}) (string, error
 }
 
 // ApplyToPool - apply to a pool
-func ApplyToPool(nodeAddress, poolAddress string) (string, error) {
-	url := fmt.Sprintf("http://localhost:3001/api/node/%s/apply/%s", nodeAddress, poolAddress)
+func ApplyToPool(poolAddress string, data map[string]interface{}) (string, error) {
+	url := fmt.Sprintf("http://localhost:3001/api/node/applications/%s/new", poolAddress)
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "ApplyToPool"}).Debug("POST: ", url)
-	res, err := utils.SendRequest("POST", url, nil)
+	res, err := utils.SendRequest("POST", url, data)
 	if err != nil {
 		return "", utils.HandleError(err, "", "node.AppyToPool")
 	}
 
+	println("RESPONSE OF SERVER", res)
+
 	log.WithFields(log.Fields{"file": "node.go", "func": "ApplyToPool"}).Debug("Response recieved, piping through the response handler")
-	api, err := utils.ControlDaemonHandler([]byte(res))
+	_, err = utils.ControlDaemonHandler([]byte(res))
 	if err != nil {
 		return "", utils.HandleError(err, "", "node.AppyToPool")
 	}
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "ApplyToPool"}).Debug("Decoding response fields")
-	txHash := api.TxHash.(map[string]interface{})
 
-	return txHash["value"].(string), nil //tx hash
+	return "success", nil //tx hash
 }
 
 // CheckPoolApplication - check the status of your pool application
