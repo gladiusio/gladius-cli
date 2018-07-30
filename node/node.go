@@ -59,6 +59,10 @@ func CheckPoolApplication(poolAddress string) (string, error) {
 		return "", utils.HandleError(err, "", "node.CheckPoolApplication")
 	}
 
+	if application == nil {
+		return "No Application Found", nil
+	}
+
 	valid := application["Valid"].(bool)
 	accepted := application["Bool"].(bool)
 
