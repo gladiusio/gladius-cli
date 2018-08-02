@@ -8,9 +8,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// GetApplication- get node application from pool
-func GetApplication(address string) (map[string]interface{}, error) {
-	url := fmt.Sprintf("http://localhost:3001/api/node/applications/%s/view", address)
+// GetApplication - get node application from pool
+func GetApplication(poolAddress string) (map[string]interface{}, error) {
+	url := fmt.Sprintf("http://localhost:3001/api/node/applications/%s/view", poolAddress)
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "GetApplication"}).Debug("GET: ", url)
 	res, err := utils.SendRequest("GET", url, nil)
@@ -63,15 +63,15 @@ func CheckPoolApplication(poolAddress string) (string, error) {
 		return "No Application Found", nil
 	}
 
-	valid := application["Valid"].(bool)
-	accepted := application["Bool"].(bool)
+	pending := application["pending"].(bool)
+	accepted := application["approved"].(bool)
 
-	if valid {
-		if accepted {
-			return "Accepted", nil
-		}
-	} else {
+	if pending {
 		return "Pending", nil
+	}
+
+	if accepted {
+		return "Accepted", nil
 	}
 
 	return "Rejected", nil

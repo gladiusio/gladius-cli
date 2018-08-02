@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 
 	"github.com/gladiusio/gladius-cli/keystore"
 	"github.com/gladiusio/gladius-cli/node"
@@ -57,6 +58,7 @@ func applyToPool(cmd *cobra.Command, args []string) {
 	defer utils.LogFile.Close()
 
 	// make sure they have a account, if they dont, make one
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Info("Checking for account")
 	account, _ := keystore.EnsureAccount()
 	if !account {
 		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Warning("No account found")
@@ -69,6 +71,7 @@ func applyToPool(cmd *cobra.Command, args []string) {
 		terminal.Println(ansi.Color("Remember your passphrase! It's how you unlock your wallet!", "83+hb"))
 		return
 	}
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Info("Account found")
 
 	// create the user questions
 	var qs = []*survey.Question{
@@ -148,6 +151,13 @@ func applyToPool(cmd *cobra.Command, args []string) {
 	if err != nil {
 		utils.PrintError(err)
 	}
+
+	speed, err := strconv.Atoi(answers["estimatedSpeed"].(string))
+	if err != nil {
+		utils.PrintError(err)
+	}
+
+	answers["estimateSpeed"] = 0 + speed
 
 	// apply to the application server
 	_, err = node.ApplyToPool(answers["pool"].(string), answers)
