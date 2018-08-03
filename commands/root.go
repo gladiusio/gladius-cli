@@ -21,7 +21,6 @@ var rootCmd = &cobra.Command{
 		fmt.Println("\nAfter you are accepted into a pool, you can become an edge node:")
 		fmt.Println("\n$ gladius node start")
 		fmt.Println("\nUse the -h flag to see the help menu")
-
 	},
 }
 

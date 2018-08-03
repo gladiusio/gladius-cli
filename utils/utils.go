@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -15,9 +14,6 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
-
-// LogLevel - What kind of logs to show (1 = Debug and above, 2 = Info and above, 3 = Warnings and above, 4 = Fatal)
-var LogLevel int
 
 // APIResponse - standard response from the control daemon api
 type APIResponse struct {
@@ -36,6 +32,11 @@ type ErrorResponse struct {
 	Path        string
 }
 
+var cachedPassphrase string
+
+// RequestTimeout - Request timeout in seconds
+var RequestTimeout int
+
 // Error - for the dev/logger
 func (e *ErrorResponse) Error() string {
 	return e.LogError
@@ -50,15 +51,12 @@ func (e *ErrorResponse) Message() string {
 // redirect policy, and other settings,
 // create an HTTP client
 var client = &http.Client{
-	Timeout: time.Second * 10, //10 second timeout
+	Timeout: time.Second * time.Duration(RequestTimeout),
 }
-
-var cachedPassphrase string
 
 // SendRequest - custom function to make sending api requests less of a pain
 // in the arse.
 func SendRequest(requestType, url string, data interface{}) (string, error) {
-
 	b := bytes.Buffer{}
 
 	// if data present, turn it into a bytesBuffer(jsonPayload)
@@ -79,22 +77,22 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 	req.Header.Set("User-Agent", "gladius-cli")
 	req.Header.Set("Content-Type", "application/json")
 
-	// if you're writing then ask for password
-	if strings.Compare(requestType, "GET") != 0 {
-		// if the password is cached then use it
-		if strings.Compare(cachedPassphrase, "") != 0 {
-			req.Header.Set("X-Authorization", cachedPassphrase)
-		} else { //else ask
-			password := AskPassphrase()
-			cachedPassphrase = password
-			req.Header.Set("X-Authorization", password)
-		}
-	}
-
 	// Send the request via a client
 	res, err := client.Do(req)
 	if err != nil {
 		return "", HandleError(err, "Could not send request", ":client.Do/SendRequest")
+	}
+
+	if res.StatusCode == 403 {
+		for i := 0; i < 3; i++ {
+			_, err = OpenAccount()
+			if err != nil {
+				HandleError(err, "", "utils.StatusCode/SendRequest")
+			} else {
+				return SendRequest(requestType, url, data)
+			}
+		}
+		PrintError(fmt.Errorf("Could not open account, check passphrase"))
 	}
 
 	// read the body of the response
@@ -111,6 +109,7 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 
 // CheckTx - check status of tx.
 // Perform a single check on a tx.
+// DEPRECATED
 func CheckTx(tx string) (bool, error) {
 	url := fmt.Sprintf("http://localhost:3001/api/status/tx/%s", tx)
 
@@ -135,6 +134,7 @@ func CheckTx(tx string) (bool, error) {
 
 // WaitForTx - wait for a tx on the blockchain to complete.
 // Queries the API every second to see if tx is complete.
+// DEPRECATED
 func WaitForTx(tx string) (bool, error) {
 	ticker := time.NewTicker(1 * time.Second)
 	quit := make(chan error) // this is the exit condition channel
@@ -181,6 +181,7 @@ func WaitForTx(tx string) (bool, error) {
 }
 
 // CheckBalance - check SYMBOL balance of account
+// DEPRECATED
 func CheckBalance(address, symbol string) (float64, error) {
 	url := fmt.Sprintf("http://localhost:3001/api/account/%s/balance/%s", address, symbol)
 
@@ -236,12 +237,15 @@ func PrintError(err error) {
 		terminal.Println(ansi.Color(err.Message(), "255+hb"))
 		log.WithFields(log.Fields{"path": err.Path}).Fatal(err.LogError)
 	} else {
-		fmt.Println(err)
+		terminal.Print(ansi.Color("[ERROR] ", "196+hb"))
+		terminal.Println(ansi.Color(err.Error(), "255+hb"))
+		log.Fatal(err.Error())
 	}
 }
 
 // GetIP - Retrieve the current machine's external IPv4 address
 // using multiple ip API's.
+// DEPRECATED
 func GetIP() (string, error) {
 	sites := [4]string{"https://ipv4.myexternalip.com/raw", "https://api.ipify.org/?format=text", "https://ident.me/", "https://ipv4bot.whatismyipaddress.com"}
 
@@ -280,7 +284,7 @@ func NewPassphrase() string {
 func AskPassphrase() string {
 	password := ""
 	prompt := &survey.Password{
-		Message: "Please type your wallet passphrase: ",
+		Message: "Please type your passphrase: ",
 	}
 	survey.AskOne(prompt, &password, nil)
 	return password
@@ -292,22 +296,37 @@ func CachePassphrase(passphrase string) {
 	cachedPassphrase = passphrase
 }
 
-// SetLogLevel - Sets the appropriate logging level.
-// 1 = Debug < , 2 = Info <, 3 = Warning <, 4 = Fatal.
-func SetLogLevel(level int) {
-	switch level {
-	case 1:
-		log.SetLevel(log.DebugLevel)
-	case 2:
-		log.SetLevel(log.InfoLevel)
-	case 3:
-		log.SetLevel(log.WarnLevel)
-	default:
-		log.SetLevel(log.FatalLevel)
+// Version - print version of each module
+func Version() {
+	res, err := SendRequest("GET", "localhost:8080/status", nil)
+	if err != nil {
+		PrintError(err)
 	}
+
+	terminal.Println(ansi.Color("CLI: ", "83+hb"), ansi.Color("0.4.0", "255+hb"))
+	terminal.Println(ansi.Color("Control Daemon: ", "83+hb"), ansi.Color("0.4.0", "255+hb"))
+	terminal.Println(ansi.Color("Network Daemon: ", "83+hb"), ansi.Color(res, "255+hb"))
 }
 
-// ClearLogger - Clears log file after every run.
-func ClearLogger() {
-	os.Remove("./log")
+// OpenAccount - open/unlock an account
+func OpenAccount() (bool, error) {
+	url := "http://localhost:3001/api/keystore/account/open"
+
+	passphrase := AskPassphrase()
+	data := make(map[string]interface{})
+	data["passphrase"] = passphrase
+
+	log.WithFields(log.Fields{"file": "wallet.go", "func": "OpenAccount"}).Debug("POST: ", url)
+	res, err := SendRequest("POST", url, data)
+	if err != nil {
+		return false, HandleError(err, "", "utils.OpenAccount")
+	}
+
+	log.WithFields(log.Fields{"file": "wallet.go", "func": "GetAccounts"}).Debug("Response recieved, piping through the response handler")
+	_, err = ControlDaemonHandler([]byte(res))
+	if err != nil {
+		return false, HandleError(err, "", "utils.OpenAccount")
+	}
+
+	return true, nil
 }
