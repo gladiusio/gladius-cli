@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"strconv"
 
 	"github.com/gladiusio/gladius-cli/keystore"
 	"github.com/gladiusio/gladius-cli/node"
@@ -69,7 +68,7 @@ func applyToPool(cmd *cobra.Command, args []string) {
 		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "createNewNode"}).Info(res)
 		fmt.Println()
 		terminal.Println(ansi.Color("Remember your passphrase! It's how you unlock your wallet!", "83+hb"))
-		return
+		fmt.Println()
 	}
 	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Info("Account found")
 
@@ -146,20 +145,15 @@ func applyToPool(cmd *cobra.Command, args []string) {
 	// the answers will be written to this struct
 	answers := make(map[string]interface{})
 
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Info("Collecting application info")
 	// perform the questions
 	err := survey.Ask(qs, &answers)
 	if err != nil {
 		utils.PrintError(err)
 	}
 
-	speed, err := strconv.Atoi(answers["estimatedSpeed"].(string))
-	if err != nil {
-		utils.PrintError(err)
-	}
-
-	answers["estimateSpeed"] = 0 + speed
-
 	// apply to the application server
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Info("Sending application to server")
 	_, err = node.ApplyToPool(answers["pool"].(string), answers)
 	if err != nil {
 		utils.PrintError(err)
@@ -167,6 +161,7 @@ func applyToPool(cmd *cobra.Command, args []string) {
 		terminal.Println(ansi.Color("Your application has been sent! Use", "255+hb"), ansi.Color("gladius check", "83+hb"),
 			ansi.Color("to check on the status of your application!", "255+hb"))
 	}
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Info("Application sent!")
 }
 
 // check the application of the node
@@ -197,6 +192,7 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 	// the answers will be written to this struct
 	answers := make(map[string]interface{})
 
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "checkPoolApp"}).Info("Collecting pool address")
 	// perform the questions
 	err := survey.Ask(qs, &answers)
 	if err != nil {
@@ -205,16 +201,16 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 
 	poolAddy := answers["pool"]
 
-	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "checkPoolApp"}).Info("Checking Application")
+	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "checkPoolApp"}).Info("Checking application")
 	// check application status
 	status, err := node.CheckPoolApplication(poolAddy.(string))
 	if err != nil {
 		utils.PrintError(err)
 	}
-
 	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "checkPoolApp"}).Info("Application checked")
+
 	fmt.Println("Pool: " + poolAddy.(string) + "\t Status: " + status)
-	terminal.Println("\nUse", ansi.Color("gladius node start", "83+hb"), "to start the node networking software")
+	terminal.Println("\nUse", ansi.Color("gladius node start", "83+hb"), "to start the node networking software if your application has been approved")
 }
 
 // start or stop the node daemon
