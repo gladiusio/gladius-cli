@@ -51,4 +51,4 @@
 
 [[constraint]]
   name = "github.com/gladiusio/gladius-utils"
-  branch = "feature/base-flags"
+  version = "0.6.0"
