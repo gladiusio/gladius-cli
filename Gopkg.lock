@@ -10,8 +10,8 @@
 [[projects]]
   name = "github.com/gladiusio/gladius-utils"
   packages = ["config"]
-  revision = "120a29bcf44fbb04b49ad9d0462baa9bc8fba2b3"
-  version = "0.6.0"
+  revision = "449be56d3f2c5a3f00bb8ba9c409fe3e8f47f05d"
+  version = "0.3.2"
 
 [[projects]]
   branch = "master"
@@ -170,6 +170,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a07f056fd26296aab303772974985b428bc31684f773cf8959574ae937fbe00f"
+  inputs-digest = "572dfe0bc32eab751982c9f0242e6d0768db669f343221519b15899fbd3ff48e"
   solver-name = "gps-cdcl"
   solver-version = 1
