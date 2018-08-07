@@ -44,11 +44,11 @@ var cmdProfile = &cobra.Command{
 	Run:   profile,
 }
 
-var cmdTest = &cobra.Command{
-	Use:   "test",
-	Short: "Test function",
-	Long:  "Have something to test but dont want to ruin everything else? Put it in this command!",
-	Run:   test,
+var cmdVersion = &cobra.Command{
+	Use:   "version",
+	Short: "See the version of the Gladius Network",
+	Long:  "See versions of the Gladius Network modules",
+	Run:   version,
 }
 
 // collect user info, send application to the server
@@ -273,6 +273,12 @@ func profile(cmd *cobra.Command, args []string) {
 	terminal.Println(ansi.Color("Account Address:", "83+hb"), ansi.Color(account, "255+hb"))
 }
 
+func version(cmd *cobra.Command, args []string) {
+	terminal.Println(ansi.Color("CLI:", "83+hb"), ansi.Color("0.5.1", "255+hb"))
+	terminal.Println(ansi.Color("CONTROLD:", "83+hb"), ansi.Color("0.5.0", "255+hb"))
+	terminal.Println(ansi.Color("NETWORKD:", "83+hb"), ansi.Color("0.5.0", "255+hb"))
+}
+
 func test(cmd *cobra.Command, args []string) {
 	utils.SetLogLevel(utils.LogLevel)
 	defer utils.LogFile.Close()
@@ -292,7 +298,7 @@ func init() {
 	rootCmd.AddCommand(cmdCheck)
 	rootCmd.AddCommand(cmdNetwork)
 	rootCmd.AddCommand(cmdProfile)
-	rootCmd.AddCommand(cmdTest)
+	rootCmd.AddCommand(cmdVersion)
 
 	// register all flags
 	// cmdCreate.Flags().BoolVarP(&reset, "reset", "r", false, "reset wallet")

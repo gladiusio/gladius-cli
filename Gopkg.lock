@@ -10,8 +10,8 @@
 [[projects]]
   name = "github.com/gladiusio/gladius-utils"
   packages = ["config"]
-  revision = "449be56d3f2c5a3f00bb8ba9c409fe3e8f47f05d"
-  version = "0.3.2"
+  revision = "bc04992f9da9f1b318352e5e449a185a5a3eb7fd"
+  version = "0.3.3"
 
 [[projects]]
   branch = "master"
