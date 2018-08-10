@@ -32,9 +32,9 @@
   name = "github.com/spf13/cobra"
   version = "0.0.2"
 
-[[override]]
+[[constraint]]
   name = "gopkg.in/AlecAivazis/survey.v1"
-  version = "1.5.3"
+  version = "=1.5.3"
 
 [prune]
   go-tests = true
