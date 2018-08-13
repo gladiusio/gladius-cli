@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gladiusio/gladius-cli/utils"
-	"github.com/powerman/rpc-codec/jsonrpc2"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -77,52 +76,15 @@ func CheckPoolApplication(poolAddress string) (string, error) {
 	return "Rejected", nil
 }
 
-// StartNetworkNode - start networking node server
-func StartNetworkNode() (string, error) {
-	// Client use HTTP transport.
-	clientHTTP := jsonrpc2.NewHTTPClient("http://localhost:5000/rpc")
-	defer clientHTTP.Close()
-
-	var reply string
-
-	// Synchronous call using positional params and TCP.
-	err := clientHTTP.Call("GladiusEdge.Start", nil, &reply)
-	if err != nil {
-		return "", utils.HandleError(err, "Error starting the node networking daemon. Make sure it's running!", "node.StartNetworkNode")
-	}
-	return reply, nil
-}
-
-// StopNetworkNode - stop network node server
-func StopNetworkNode() (string, error) {
-	// Client use HTTP transport.
-	clientHTTP := jsonrpc2.NewHTTPClient("http://localhost:5000/rpc")
-	defer clientHTTP.Close()
-
-	var reply string
-
-	// Synchronous call using positional params and TCP.
-	err := clientHTTP.Call("GladiusEdge.Stop", nil, &reply)
-	if err != nil {
-		return "", utils.HandleError(err, "Error stopping the node networking daemon. Make sure it's running!", "node.StopNetworkNode")
-	}
-
-	return reply, nil
-}
-
 // StatusNetworkNode - status of network node server
 func StatusNetworkNode() (string, error) {
-	// Client use HTTP transport.
-	clientHTTP := jsonrpc2.NewHTTPClient("http://localhost:5000/rpc")
-	defer clientHTTP.Close()
+	url := "http://localhost:8080"
 
-	var reply string
-
-	// Synchronous call using positional params and TCP.
-	err := clientHTTP.Call("GladiusEdge.Status", nil, &reply)
+	log.WithFields(log.Fields{"file": "node.go", "func": "StatusNetworkNode"}).Debug("GET: ", url)
+	_, err := utils.SendRequest("GET", url, nil)
 	if err != nil {
-		return "", utils.HandleError(err, "Error communicating with the node networking daemon. Make sure it's running!", "node.StatusNetworkNode")
+		return "Offline", utils.HandleError(err, "", "node.StatusNetworkNode")
 	}
 
-	return reply, nil
+	return "Online", nil
 }

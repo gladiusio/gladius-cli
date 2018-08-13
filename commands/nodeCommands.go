@@ -31,9 +31,9 @@ var cmdCheck = &cobra.Command{
 }
 
 var cmdNetwork = &cobra.Command{
-	Use:   "node [start|stop|status]",
-	Short: "Start/Stop or check status of your node's networking server",
-	Long:  "Start/Stop or check status of your node's networking server",
+	Use:   "node status",
+	Short: "See the status of your node's networking server",
+	Long:  "See the status of your node's networking server",
 	Run:   network,
 }
 
@@ -158,6 +158,7 @@ func applyToPool(cmd *cobra.Command, args []string) {
 	if err != nil {
 		utils.PrintError(err)
 	} else {
+		println()
 		terminal.Println(ansi.Color("Your application has been sent! Use", "255+hb"), ansi.Color("gladius check", "83+hb"),
 			ansi.Color("to check on the status of your application!", "255+hb"))
 	}
@@ -209,8 +210,9 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 	}
 	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "checkPoolApp"}).Info("Application checked")
 
-	fmt.Println("Pool: " + poolAddy.(string) + "\t Status: " + status)
-	terminal.Println("\nUse", ansi.Color("gladius node start", "83+hb"), "to start the node networking software if your application has been approved")
+	fmt.Println()
+	terminal.Println(ansi.Color("Pool: "+poolAddy.(string)+"\t Status: "+status, "255+hb"))
+	terminal.Println(ansi.Color("\nOnce your application is approved you will automatically become an edge node!", "255+hb"))
 }
 
 // start or stop the node daemon
@@ -223,35 +225,14 @@ func network(cmd *cobra.Command, args []string) {
 	}
 
 	switch args[0] {
-	case "start":
-		reply, err := node.StartNetworkNode()
-		if err != nil {
-			utils.PrintError(err)
-		} else {
-			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Info("Network daemon started")
-			terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
-			terminal.Println("\nUse", ansi.Color("gladius node stop", "83+hb"), "to stop the node networking software")
-			terminal.Println("Use", ansi.Color("gladius node status", "83+hb"), "to check the status of the node networking software")
-		}
-	case "stop":
-		reply, err := node.StopNetworkNode()
-		if err != nil {
-			utils.PrintError(err)
-		} else {
-			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Info("Network daemon stopped")
-			terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
-			terminal.Println("\nUse", ansi.Color("gladius node start", "83+hb"), "to start the node networking software")
-			terminal.Println("Use", ansi.Color("gladius node status", "83+hb"), "to check the status of the node networking software")
-		}
 	case "status":
 		reply, err := node.StatusNetworkNode()
 		if err != nil {
-			utils.PrintError(err)
+			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Info("Network daemon status")
+			terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
 		} else {
 			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Info("Network daemon status")
 			terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
-			terminal.Println("\nUse", ansi.Color("gladius node start", "83+hb"), "to start the node networking software")
-			terminal.Println("Use", ansi.Color("gladius node stop", "83+hb"), "to stop the node networking software")
 		}
 	default:
 		terminal.Println("\nUse", ansi.Color("gladius node -h", "83+hb"), "for help")
@@ -274,19 +255,9 @@ func profile(cmd *cobra.Command, args []string) {
 }
 
 func version(cmd *cobra.Command, args []string) {
-	terminal.Println(ansi.Color("CLI:", "83+hb"), ansi.Color("0.5.1", "255+hb"))
-	terminal.Println(ansi.Color("CONTROLD:", "83+hb"), ansi.Color("0.5.0", "255+hb"))
-	terminal.Println(ansi.Color("NETWORKD:", "83+hb"), ansi.Color("0.5.0", "255+hb"))
-}
-
-func test(cmd *cobra.Command, args []string) {
-	utils.SetLogLevel(utils.LogLevel)
-	defer utils.LogFile.Close()
-
-	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "Test"}).Debug("DEBUG")
-	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "Test"}).Info("INFO")
-	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "Test"}).Warning("WARNING")
-	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "Test"}).Fatal("FATAL")
+	terminal.Println(ansi.Color("CLI:", "83+hb"), ansi.Color("0.5.5", "255+hb"))
+	terminal.Println(ansi.Color("CONTROLD:", "83+hb"), ansi.Color("0.5.3", "255+hb"))
+	terminal.Println(ansi.Color("NETWORKD:", "83+hb"), ansi.Color("0.5.2", "255+hb"))
 }
 
 func init() {
