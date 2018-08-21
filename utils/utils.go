@@ -33,6 +33,7 @@ type ErrorResponse struct {
 }
 
 var cachedPassphrase string
+var attempts = 0
 
 // RequestTimeout - Request timeout in seconds
 var RequestTimeout int
@@ -83,14 +84,17 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 		return "", HandleError(err, "Could not send request", ":client.Do/SendRequest")
 	}
 
-	if res.StatusCode == 403 {
-		for i := 0; i < 3; i++ {
-			_, err = OpenAccount()
+	switch res.StatusCode {
+	case 403:
+		fallthrough
+	case 405:
+		if attempts < 3 {
+			attempts++
+			_, err := OpenAccount()
 			if err != nil {
-				HandleError(err, "", "utils.StatusCode/SendRequest")
-			} else {
-				return SendRequest(requestType, url, data)
+				return "", HandleError(err, "", "utils.StatusCodeHandler")
 			}
+			return SendRequest(requestType, url, data)
 		}
 		PrintError(fmt.Errorf("Could not open account, check passphrase"))
 	}
@@ -236,11 +240,13 @@ func PrintError(err error) {
 		terminal.Print(ansi.Color("[ERROR] ", "196+hb"))
 		terminal.Println(ansi.Color(err.Message(), "255+hb"))
 		log.WithFields(log.Fields{"path": err.Path}).Fatal(err.LogError)
-	} else {
-		terminal.Print(ansi.Color("[ERROR] ", "196+hb"))
-		terminal.Println(ansi.Color(err.Error(), "255+hb"))
-		log.Fatal(err.Error())
+		return
 	}
+
+	terminal.Print(ansi.Color("[ERROR] ", "196+hb"))
+	terminal.Println(ansi.Color(fmt.Sprint(err), "255+hb"))
+	log.Fatal(fmt.Sprint(err))
+
 }
 
 // GetIP - Retrieve the current machine's external IPv4 address
