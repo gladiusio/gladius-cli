@@ -7,8 +7,10 @@
 ##
 
 # commands for go
-GOBUILD=go build
-GOTEST=go test
+GOMOD=GO111MODULE=on
+GOBUILD=$(GOMOD) go build
+GOTEST=$(GOMOD) go test
+GOCLEAN=$(GOMOD) go clean
 
 # if we are running on a windows machine
 # we need to append a .exe to the
@@ -37,12 +39,12 @@ CLI_DEST=$(DST_DIR)/gladius$(BINARY_SUFFIX)
 ##
 
 # default, will be called if no arguments supplied
-all: test executable
+all: clean test executable
 
 # delete anything in the build dir and clean
 clean:
 	rm -rf ./build/*
-	go clean
+	$(GOCLEAN) $(CLI_SRC)
 
 # test edged
 test: $(CLI_SRC)
