@@ -28,11 +28,13 @@ endif
 SRC_DIR=./cmd
 DST_DIR=./build
 
+BINARY=gladius$(BINARY_SUFFIX)
+
 # source of edged
 CLI_SRC=$(SRC_DIR)
 
 # destination of compiled edged
-CLI_DEST=$(DST_DIR)/gladius$(BINARY_SUFFIX)
+CLI_DEST=$(DST_DIR)/$(BINARY)
 
 ##
 # MAKE TARGETS
@@ -49,6 +51,19 @@ clean:
 # test edged
 test: $(CLI_SRC)
 	$(GOTEST) $(CLI_SRC)
+
+# Made for macOS at the moment
+# Install gcc cross compilers for macOS
+# `brew install mingw-w64` - windows
+# `brew install FiloSottile/musl-cross/musl-cross` - linux
+release: clean release-win release-linux release-mac
+
+release-win:
+	CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc GOOS=windows GOARCH=amd64 $(GOBUILD) -o $(DST_DIR)/release/windows/$(BINARY).exe $(CLI_SRC)
+release-linux:
+	CGO_ENABLED=1 CC=x86_64-linux-musl-gcc GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(DST_DIR)/release/linux/$(BINARY) $(CLI_SRC)
+release-mac:
+	GOOS=darwin GOARCH=amd64 $(GOBUILD) -o $(DST_DIR)/release/macos/$(BINARY) $(CLI_SRC)
 
 # test and compile the edged
 executable:
