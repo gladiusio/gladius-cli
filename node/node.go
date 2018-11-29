@@ -1,10 +1,12 @@
 package node
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/gladiusio/gladius-cli/utils"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 // GetApplication - get node application from pool
@@ -87,4 +89,38 @@ func StatusNetworkNode() (string, error) {
 	}
 
 	return "Online", nil
+}
+
+// GetVersion - get individual version number from module
+func GetVersion(module string) (string, error) {
+	var port int
+	switch module {
+	case "guardian":
+		port = viper.GetInt("Ports.Guardian")
+	case "edged":
+		port = viper.GetInt("Ports.EdgeD")
+	case "network-gateway":
+		port = viper.GetInt("Ports.NetworkGateway")
+	default:
+		port = 0
+	}
+
+	if port == 0 {
+		return "", fmt.Errorf("Module %s not found", module)
+	}
+	res, err := utils.SendRequest("GET", fmt.Sprintf("http://localhost:%d/version", port), nil)
+	if err != nil {
+		return "", err
+	}
+
+	var response = make(map[string]interface{})
+	err = json.Unmarshal([]byte(res), &response)
+	if err != nil {
+		return "", err
+	}
+
+	res1 := response["response"].(map[string]interface{})
+	version := res1["version"].(string)
+
+	return version, nil
 }
