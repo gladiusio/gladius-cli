@@ -215,13 +215,14 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 	terminal.Println(ansi.Color("\nOnce your application is approved you will automatically become an edge node!", "255+hb"))
 }
 
-// start or stop the node daemon
+// status of the node daemon
 func network(cmd *cobra.Command, args []string) {
 	utils.SetLogLevel(utils.LogLevel)
 	defer utils.LogFile.Close()
 
 	if len(args) == 0 {
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Fatal("Please use: \ngladius node start\ngladius node stop\ngladius node status")
+		print("Please use: gladius node status")
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Fatal("Please use: gladius node status")
 	}
 
 	switch args[0] {
@@ -255,9 +256,24 @@ func profile(cmd *cobra.Command, args []string) {
 }
 
 func version(cmd *cobra.Command, args []string) {
-	terminal.Println(ansi.Color("CLI:", "83+hb"), ansi.Color("0.5.5", "255+hb"))
-	terminal.Println(ansi.Color("CONTROLD:", "83+hb"), ansi.Color("0.5.3", "255+hb"))
-	terminal.Println(ansi.Color("NETWORKD:", "83+hb"), ansi.Color("0.5.2", "255+hb"))
+	cli := "0.6.0"
+	guardian, err := node.GetVersion("guardian")
+	if err != nil {
+		guardian = "NOT ONLINE"
+	}
+	edged, err := node.GetVersion("edged")
+	if err != nil {
+		edged = "NOT ONLINE"
+	}
+	networkGateway, err := node.GetVersion("network-gateway")
+	if err != nil {
+		networkGateway = "NOT ONLINE"
+	}
+
+	terminal.Println(ansi.Color("CLI:", "83+hb"), ansi.Color(cli, "255+hb"))
+	terminal.Println(ansi.Color("EDGED:", "83+hb"), ansi.Color(edged, "255+hb"))
+	terminal.Println(ansi.Color("NETWORKD:", "83+hb"), ansi.Color(networkGateway, "255+hb"))
+	terminal.Println(ansi.Color("GUARDIAN:", "83+hb"), ansi.Color(guardian, "255+hb"))
 }
 
 func init() {
