@@ -215,13 +215,14 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 	terminal.Println(ansi.Color("\nOnce your application is approved you will automatically become an edge node!", "255+hb"))
 }
 
-// start or stop the node daemon
+// status of the node daemon
 func network(cmd *cobra.Command, args []string) {
 	utils.SetLogLevel(utils.LogLevel)
 	defer utils.LogFile.Close()
 
 	if len(args) == 0 {
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Fatal("Please use: \ngladius node start\ngladius node stop\ngladius node status")
+		print("Please use: gladius node status")
+		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Fatal("Please use: gladius node status")
 	}
 
 	switch args[0] {
