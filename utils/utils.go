@@ -97,6 +97,9 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 			return SendRequest(requestType, url, data)
 		}
 		PrintError(fmt.Errorf("Could not open account, check passphrase"))
+	case 400:
+		PrintError(fmt.Errorf("Could not start one or more of the services"))
+		return "", fmt.Errorf("Could not start one or more of the services")
 	}
 
 	// read the body of the response

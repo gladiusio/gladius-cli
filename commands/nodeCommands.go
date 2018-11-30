@@ -51,6 +51,20 @@ var cmdVersion = &cobra.Command{
 	Run:   version,
 }
 
+var cmdStart = &cobra.Command{
+	Use:   "start",
+	Short: "Start the gladius modules",
+	Long:  "Start the EdgeD and Network Gateway",
+	Run:   start,
+}
+
+var cmdStop = &cobra.Command{
+	Use:   "stop",
+	Short: "Stop the gladius modules",
+	Long:  "Stop the EdgeD and Network Gateway",
+	Run:   stop,
+}
+
 // collect user info, send application to the server
 func applyToPool(cmd *cobra.Command, args []string) {
 	utils.SetLogLevel(utils.LogLevel)
@@ -255,25 +269,54 @@ func profile(cmd *cobra.Command, args []string) {
 	terminal.Println(ansi.Color("Account Address:", "83+hb"), ansi.Color(account, "255+hb"))
 }
 
+// versions of the modules
 func version(cmd *cobra.Command, args []string) {
-	cli := "0.6.0"
+	cli := "0.7.0"
+	offline := "NOT ONLINE"
+
 	guardian, err := node.GetVersion("guardian")
 	if err != nil {
-		guardian = "NOT ONLINE"
+		guardian = offline
 	}
 	edged, err := node.GetVersion("edged")
 	if err != nil {
-		edged = "NOT ONLINE"
+		edged = offline
 	}
 	networkGateway, err := node.GetVersion("network-gateway")
 	if err != nil {
-		networkGateway = "NOT ONLINE"
+		networkGateway = offline
 	}
 
 	terminal.Println(ansi.Color("CLI:", "83+hb"), ansi.Color(cli, "255+hb"))
 	terminal.Println(ansi.Color("EDGED:", "83+hb"), ansi.Color(edged, "255+hb"))
 	terminal.Println(ansi.Color("NETWORKD:", "83+hb"), ansi.Color(networkGateway, "255+hb"))
 	terminal.Println(ansi.Color("GUARDIAN:", "83+hb"), ansi.Color(guardian, "255+hb"))
+}
+
+func start(cmd *cobra.Command, args []string) {
+	utils.SetLogLevel(utils.LogLevel)
+	defer utils.LogFile.Close()
+
+	status, err := node.Start()
+	if err != nil {
+		utils.PrintError(err)
+	} else {
+		terminal.Println(ansi.Color("Network Gateway:", "83+hb"), ansi.Color(status, "255+hb"))
+		terminal.Println(ansi.Color("Edge Daemon:", "83+hb"), ansi.Color(status, "255+hb"))
+	}
+}
+
+func stop(cmd *cobra.Command, args []string) {
+	utils.SetLogLevel(utils.LogLevel)
+	defer utils.LogFile.Close()
+
+	status, err := node.Stop()
+	if err != nil {
+		utils.PrintError(err)
+	} else {
+		terminal.Println(ansi.Color("Network Gateway:", "83+hb"), ansi.Color(status, "255+hb"))
+		terminal.Println(ansi.Color("Edge Daemon:", "83+hb"), ansi.Color(status, "255+hb"))
+	}
 }
 
 func init() {
@@ -286,6 +329,8 @@ func init() {
 	rootCmd.AddCommand(cmdNetwork)
 	rootCmd.AddCommand(cmdProfile)
 	rootCmd.AddCommand(cmdVersion)
+	rootCmd.AddCommand(cmdStart)
+	rootCmd.AddCommand(cmdStop)
 
 	// register all flags
 	// cmdCreate.Flags().BoolVarP(&reset, "reset", "r", false, "reset wallet")

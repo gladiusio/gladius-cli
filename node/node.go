@@ -91,6 +91,48 @@ func StatusNetworkNode() (string, error) {
 	return "Online", nil
 }
 
+// Start - start network gateway and edged
+func Start() (string, error) {
+	timeoutURL := fmt.Sprintf("http://localhost:%d/service/set_timeout", viper.GetInt("Ports.Guardian"))
+	startURL := fmt.Sprintf("http://localhost:%d/service/set_state/all", viper.GetInt("Ports.Guardian"))
+
+	timeout := make(map[string]int)
+	timeout["timeout"] = 3
+
+	running := make(map[string]bool)
+	running["running"] = true
+
+	log.WithFields(log.Fields{"file": "node.go", "func": "Start"}).Debug("POST: ", timeoutURL)
+	_, err := utils.SendRequest("POST", timeoutURL, timeout)
+	if err != nil {
+		return "Failed to set timeout", utils.HandleError(err, "", "node.Start")
+	}
+
+	log.WithFields(log.Fields{"file": "node.go", "func": "Start"}).Debug("POST: ", startURL)
+	_, err = utils.SendRequest("PUT", startURL, running)
+	if err != nil {
+		return "Failed to star one or more modules", utils.HandleError(err, "", "node.Start")
+	}
+
+	return "Started modules", nil
+}
+
+// Stop - stop network gateway and edged
+func Stop() (string, error) {
+	stopURL := fmt.Sprintf("http://localhost:%d/service/set_state/all", viper.GetInt("Ports.Guardian"))
+
+	running := make(map[string]bool)
+	running["running"] = false
+
+	log.WithFields(log.Fields{"file": "node.go", "func": "Start"}).Debug("POST: ", stopURL)
+	_, err := utils.SendRequest("PUT", stopURL, running)
+	if err != nil {
+		return "Failed to stop one or both modules", utils.HandleError(err, "", "node.Start")
+	}
+
+	return "Stopped modules", nil
+}
+
 // GetVersion - get individual version number from module
 func GetVersion(module string) (string, error) {
 	var port int
