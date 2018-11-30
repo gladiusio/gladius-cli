@@ -11,7 +11,7 @@ import (
 
 // GetApplication - get node application from pool
 func GetApplication(poolAddress string) (map[string]interface{}, error) {
-	url := fmt.Sprintf("http://localhost:3001/api/node/applications/%s/view", poolAddress)
+	url := fmt.Sprintf("http://localhost:%d/api/node/applications/%s/view", viper.GetInt("Ports.NetworkGateway"), poolAddress)
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "GetApplication"}).Debug("GET: ", url)
 	res, err := utils.SendRequest("GET", url, nil)
@@ -34,7 +34,7 @@ func GetApplication(poolAddress string) (map[string]interface{}, error) {
 
 // ApplyToPool - apply to a pool
 func ApplyToPool(poolAddress string, data map[string]interface{}) (string, error) {
-	url := fmt.Sprintf("http://localhost:3001/api/node/applications/%s/new", poolAddress)
+	url := fmt.Sprintf("http://localhost:%d/api/node/applications/%s/new", viper.GetInt("Ports.NetworkGateway"), poolAddress)
 
 	log.WithFields(log.Fields{"file": "node.go", "func": "ApplyToPool"}).Debug("POST: ", url)
 	res, err := utils.SendRequest("POST", url, data)
@@ -76,19 +76,6 @@ func CheckPoolApplication(poolAddress string) (string, error) {
 	}
 
 	return "Rejected", nil
-}
-
-// StatusNetworkNode - status of network node server
-func StatusNetworkNode() (string, error) {
-	url := "http://localhost:8080"
-
-	log.WithFields(log.Fields{"file": "node.go", "func": "StatusNetworkNode"}).Debug("GET: ", url)
-	_, err := utils.SendRequest("GET", url, nil)
-	if err != nil {
-		return "Offline", utils.HandleError(err, "", "node.StatusNetworkNode")
-	}
-
-	return "Online", nil
 }
 
 // Start - start network gateway and edged

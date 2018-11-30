@@ -30,11 +30,11 @@ var cmdCheck = &cobra.Command{
 	Run:   checkPoolApp,
 }
 
-var cmdNetwork = &cobra.Command{
-	Use:   "node status",
-	Short: "See the status of your node's networking server",
-	Long:  "See the status of your node's networking server",
-	Run:   network,
+var cmdStatus = &cobra.Command{
+	Use:   "status",
+	Short: "See the status of your node",
+	Long:  "See the status of each module",
+	Run:   status,
 }
 
 var cmdProfile = &cobra.Command{
@@ -229,32 +229,6 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 	terminal.Println(ansi.Color("\nOnce your application is approved you will automatically become an edge node!", "255+hb"))
 }
 
-// status of the node daemon
-func network(cmd *cobra.Command, args []string) {
-	utils.SetLogLevel(utils.LogLevel)
-	defer utils.LogFile.Close()
-
-	if len(args) == 0 {
-		print("Please use: gladius node status")
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Fatal("Please use: gladius node status")
-	}
-
-	switch args[0] {
-	case "status":
-		reply, err := node.StatusNetworkNode()
-		if err != nil {
-			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Info("Network daemon status")
-			terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
-		} else {
-			log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Info("Network daemon status")
-			terminal.Println(ansi.Color("Network Daemon:\t", "83+hb"), ansi.Color(reply, "255+hb"))
-		}
-	default:
-		terminal.Println("\nUse", ansi.Color("gladius node -h", "83+hb"), "for help")
-		log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "network"}).Fatal("command not recognized")
-	}
-}
-
 // get a users profile
 func profile(cmd *cobra.Command, args []string) {
 	utils.SetLogLevel(utils.LogLevel)
@@ -319,6 +293,43 @@ func stop(cmd *cobra.Command, args []string) {
 	}
 }
 
+func status(cmd *cobra.Command, args []string) {
+	offline := "NOT ONLINE"
+	online := "ONLINE"
+
+	onlineColor := "83+hb"
+	offlineColor := "196+hb"
+
+	statusColor := make(map[string]string)
+
+	_, err := node.GetVersion("guardian")
+	guardian := online
+	statusColor["guardian"] = onlineColor
+	if err != nil {
+		guardian = offline
+		statusColor["guardian"] = offlineColor
+	}
+
+	_, err = node.GetVersion("edged")
+	edged := online
+	statusColor["edged"] = onlineColor
+	if err != nil {
+		edged = offline
+		statusColor["edged"] = offlineColor
+	}
+	_, err = node.GetVersion("network-gateway")
+	networkGateway := online
+	statusColor["networkGateway"] = onlineColor
+	if err != nil {
+		networkGateway = offline
+		statusColor["networkGateway"] = offlineColor
+	}
+
+	terminal.Println(ansi.Color("EDGE DAEMON:\t", statusColor["edged"]), ansi.Color(edged, "255+hb"))
+	terminal.Println(ansi.Color("NETWORK GATEWAY:", statusColor["networkGateway"]), ansi.Color(networkGateway, "255+hb"))
+	terminal.Println(ansi.Color("GUARDIAN:\t", statusColor["guardian"]), ansi.Color(guardian, "255+hb"))
+}
+
 func init() {
 	surveyCore.QuestionIcon = "[Gladius]"
 
@@ -326,7 +337,7 @@ func init() {
 	// rootCmd.AddCommand(cmdCreate)
 	rootCmd.AddCommand(cmdApply)
 	rootCmd.AddCommand(cmdCheck)
-	rootCmd.AddCommand(cmdNetwork)
+	rootCmd.AddCommand(cmdStatus)
 	rootCmd.AddCommand(cmdProfile)
 	rootCmd.AddCommand(cmdVersion)
 	rootCmd.AddCommand(cmdStart)
