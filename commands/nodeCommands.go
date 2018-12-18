@@ -245,7 +245,7 @@ func profile(cmd *cobra.Command, args []string) {
 
 // versions of the modules
 func version(cmd *cobra.Command, args []string) {
-	cli := "0.7.0"
+	cli := "0.7.1"
 	offline := "NOT ONLINE"
 
 	guardian, err := node.GetVersion("guardian")
