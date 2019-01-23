@@ -34,6 +34,10 @@ $ gladius check
 
 After you are accepted into a pool you will automatically become an edge node
 
+To unlock your wallet after it has been created run:
+
+$ gladius unlock
+
 Use the -h flag to see the help menu
 ```
 
@@ -87,6 +91,17 @@ EDGE DAEMON:	 ONLINE
 NETWORK GATEWAY: ONLINE
 GUARDIAN:        ONLINE
 ```
+
+**unlock**
+
+Unlock your wallet after it has been created
+
+```
+$ gladius unlock
+
+[Gladius] Please type your passphrase:  ********
+```
+
 
 **profile**
 

@@ -65,6 +65,13 @@ var cmdStop = &cobra.Command{
 	Run:   stop,
 }
 
+var cmdUnlock = &cobra.Command{
+	Use:   "unlock",
+	Short: "Unlock your wallet",
+	Long:  "Unlock the gladius wallet in the Network Gateway",
+	Run:   unlock,
+}
+
 // collect user info, send application to the server
 func applyToPool(cmd *cobra.Command, args []string) {
 	utils.SetLogLevel(utils.LogLevel)
@@ -177,6 +184,10 @@ func applyToPool(cmd *cobra.Command, args []string) {
 			ansi.Color("to check on the status of your application!", "255+hb"))
 	}
 	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Info("Application sent!")
+}
+
+func unlock(cmd *cobra.Command, args []string) {
+	utils.OpenAccount()
 }
 
 // check the application of the node
@@ -342,6 +353,7 @@ func init() {
 	rootCmd.AddCommand(cmdVersion)
 	rootCmd.AddCommand(cmdStart)
 	rootCmd.AddCommand(cmdStop)
+	rootCmd.AddCommand(cmdUnlock)
 
 	// register all flags
 	// cmdCreate.Flags().BoolVarP(&reset, "reset", "r", false, "reset wallet")

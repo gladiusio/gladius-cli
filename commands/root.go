@@ -19,6 +19,8 @@ var rootCmd = &cobra.Command{
 		fmt.Println("$ gladius apply")
 		fmt.Println("$ gladius check")
 		fmt.Println("\nAfter you are accepted into a pool you will automatically become an edge node")
+		fmt.Println("\nTo unlock your wallet after it has been created run:")
+		fmt.Println("\n$ gladius unlock")
 		fmt.Println("\nUse the -h flag to see the help menu")
 	},
 }

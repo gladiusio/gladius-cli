@@ -88,6 +88,8 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 	case 403:
 		fallthrough
 	case 405:
+		terminal.Print(ansi.Color("[ERROR] ", "196+hb"))
+		terminal.Println(ansi.Color("Could not unlock wallet, please try again", "255+hb"))
 		if attempts < 3 {
 			attempts++
 			_, err := OpenAccount()
@@ -96,7 +98,6 @@ func SendRequest(requestType, url string, data interface{}) (string, error) {
 			}
 			return SendRequest(requestType, url, data)
 		}
-		PrintError(fmt.Errorf("Could not open account, check passphrase"))
 	}
 
 	// read the body of the response
