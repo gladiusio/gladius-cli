@@ -153,3 +153,33 @@ func GetVersion(module string) (string, error) {
 
 	return version, nil
 }
+
+func Update() (bool, error) {
+	res, err := utils.SendRequest("GET", "https://gladius-version.nyc3.digitaloceanspaces.com/version.json", nil)
+	if err != nil {
+		return false, err
+	}
+
+	var response = make(map[string]interface{})
+	err = json.Unmarshal([]byte(res), &response)
+	if err != nil {
+		return false, err
+	}
+
+	officialVersions := response
+	currentVersion := make(map[string]string)
+
+	currentVersion["gladius-guardian"], err = GetVersion("guardian")
+	currentVersion["gladius-edged"], err = GetVersion("edged")
+	currentVersion["gladius-network-gateway"], err = GetVersion("network-gateway")
+
+	for ver := range officialVersions {
+		if officialVersions[ver] != currentVersion[ver] {
+			fmt.Println(ver, true)
+		} else {
+			fmt.Println(ver, false)
+		}
+	}
+
+	return false, nil
+}

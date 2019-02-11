@@ -72,6 +72,13 @@ var cmdUnlock = &cobra.Command{
 	Run:   unlock,
 }
 
+var cmdUpdate = &cobra.Command{
+	Use:   "update",
+	Short: "Update your node",
+	Long:  "Update your node software",
+	Run:   update,
+}
+
 // collect user info, send application to the server
 func applyToPool(cmd *cobra.Command, args []string) {
 	utils.SetLogLevel(utils.LogLevel)
@@ -186,6 +193,7 @@ func applyToPool(cmd *cobra.Command, args []string) {
 	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Info("Application sent!")
 }
 
+// unlock your wallet manually
 func unlock(cmd *cobra.Command, args []string) {
 	utils.OpenAccount()
 }
@@ -341,6 +349,10 @@ func status(cmd *cobra.Command, args []string) {
 	terminal.Println(ansi.Color("GUARDIAN:\t", statusColor["guardian"]), ansi.Color(guardian, "255+hb"))
 }
 
+func update(cmd *cobra.Command, args []string) {
+	node.Update()
+}
+
 func init() {
 	surveyCore.QuestionIcon = "[Gladius]"
 
@@ -354,6 +366,7 @@ func init() {
 	rootCmd.AddCommand(cmdStart)
 	rootCmd.AddCommand(cmdStop)
 	rootCmd.AddCommand(cmdUnlock)
+	rootCmd.AddCommand(cmdUpdate)
 
 	// register all flags
 	// cmdCreate.Flags().BoolVarP(&reset, "reset", "r", false, "reset wallet")
