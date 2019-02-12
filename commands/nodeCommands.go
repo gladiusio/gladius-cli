@@ -366,15 +366,7 @@ func status(cmd *cobra.Command, args []string) {
 }
 
 func update(cmd *cobra.Command, args []string) {
-	updateNeeded, _ := node.NeedUpdate()
-	if updateNeeded {
-		fmt.Println()
-		fmt.Println("One or more of your modules is out of date!")
-		fmt.Println("You can find the newest versions here: https://github.com/gladiusio/gladius-node")
-	} else {
-		fmt.Println()
-		fmt.Println("Everything up to date!")
-	}
+	checkUpdate()
 }
 
 func checkUpdate() {
