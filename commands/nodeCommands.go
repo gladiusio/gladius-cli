@@ -74,8 +74,8 @@ var cmdUnlock = &cobra.Command{
 
 var cmdUpdate = &cobra.Command{
 	Use:   "update",
-	Short: "Update your node",
-	Long:  "Update your node software",
+	Short: "Check for updates for your node",
+	Long:  "Check for updates your node modules",
 	Run:   update,
 }
 
@@ -191,11 +191,15 @@ func applyToPool(cmd *cobra.Command, args []string) {
 			ansi.Color("to check on the status of your application!", "255+hb"))
 	}
 	log.WithFields(log.Fields{"file": "nodeCommands.go", "func": "applyToPool"}).Info("Application sent!")
+
+	checkUpdate()
 }
 
 // unlock your wallet manually
 func unlock(cmd *cobra.Command, args []string) {
 	utils.OpenAccount()
+
+	checkUpdate()
 }
 
 // check the application of the node
@@ -246,6 +250,8 @@ func checkPoolApp(cmd *cobra.Command, args []string) {
 	fmt.Println()
 	terminal.Println(ansi.Color("Pool: "+poolAddy.(string)+"\t Status: "+status, "255+hb"))
 	terminal.Println(ansi.Color("\nOnce your application is approved you will automatically become an edge node!", "255+hb"))
+
+	checkUpdate()
 }
 
 // get a users profile
@@ -260,6 +266,8 @@ func profile(cmd *cobra.Command, args []string) {
 
 	fmt.Println()
 	terminal.Println(ansi.Color("Account Address:", "83+hb"), ansi.Color(account, "255+hb"))
+
+	checkUpdate()
 }
 
 // versions of the modules
@@ -284,6 +292,8 @@ func version(cmd *cobra.Command, args []string) {
 	terminal.Println(ansi.Color("EDGED:", "83+hb"), ansi.Color(edged, "255+hb"))
 	terminal.Println(ansi.Color("NETWORKD:", "83+hb"), ansi.Color(networkGateway, "255+hb"))
 	terminal.Println(ansi.Color("GUARDIAN:", "83+hb"), ansi.Color(guardian, "255+hb"))
+
+	checkUpdate()
 }
 
 func start(cmd *cobra.Command, args []string) {
@@ -297,6 +307,8 @@ func start(cmd *cobra.Command, args []string) {
 		terminal.Println(ansi.Color("Network Gateway:", "83+hb"), ansi.Color(status, "255+hb"))
 		terminal.Println(ansi.Color("Edge Daemon:", "83+hb"), ansi.Color(status, "255+hb"))
 	}
+
+	checkUpdate()
 }
 
 func stop(cmd *cobra.Command, args []string) {
@@ -310,6 +322,8 @@ func stop(cmd *cobra.Command, args []string) {
 		terminal.Println(ansi.Color("Network Gateway:", "83+hb"), ansi.Color(status, "255+hb"))
 		terminal.Println(ansi.Color("Edge Daemon:", "83+hb"), ansi.Color(status, "255+hb"))
 	}
+
+	checkUpdate()
 }
 
 func status(cmd *cobra.Command, args []string) {
@@ -347,10 +361,32 @@ func status(cmd *cobra.Command, args []string) {
 	terminal.Println(ansi.Color("EDGE DAEMON:\t", statusColor["edged"]), ansi.Color(edged, "255+hb"))
 	terminal.Println(ansi.Color("NETWORK GATEWAY:", statusColor["networkGateway"]), ansi.Color(networkGateway, "255+hb"))
 	terminal.Println(ansi.Color("GUARDIAN:\t", statusColor["guardian"]), ansi.Color(guardian, "255+hb"))
+
+	checkUpdate()
 }
 
 func update(cmd *cobra.Command, args []string) {
-	node.Update()
+	updateNeeded, _ := node.NeedUpdate()
+	if updateNeeded {
+		fmt.Println()
+		fmt.Println("One or more of your modules is out of date!")
+		fmt.Println("You can find the newest versions here: https://github.com/gladiusio/gladius-node")
+	} else {
+		fmt.Println()
+		fmt.Println("Everything up to date!")
+	}
+}
+
+func checkUpdate() {
+	updateNeeded, _ := node.NeedUpdate()
+	if updateNeeded {
+		fmt.Println()
+		fmt.Println("One or more of your modules is out of date!")
+		fmt.Println("You can find the newest versions here: https://github.com/gladiusio/gladius-node")
+	} else {
+		fmt.Println()
+		fmt.Println("Everything up to date!")
+	}
 }
 
 func init() {

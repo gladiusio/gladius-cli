@@ -2,6 +2,7 @@ package node
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/gladiusio/gladius-cli/utils"
@@ -154,12 +155,14 @@ func GetVersion(module string) (string, error) {
 	return version, nil
 }
 
-func Update() (bool, error) {
+func NeedUpdate() (bool, error) {
+	// get the official versions
 	res, err := utils.SendRequest("GET", "https://gladius-version.nyc3.digitaloceanspaces.com/version.json", nil)
 	if err != nil {
 		return false, err
 	}
 
+	// parse response
 	var response = make(map[string]interface{})
 	err = json.Unmarshal([]byte(res), &response)
 	if err != nil {
@@ -167,19 +170,30 @@ func Update() (bool, error) {
 	}
 
 	officialVersions := response
+
+	// get the current versions
 	currentVersion := make(map[string]string)
+	currentVersion["gladius-guardian"], _ = GetVersion("guardian")
+	currentVersion["gladius-edged"], _ = GetVersion("edged")
+	currentVersion["gladius-network-gateway"], _ = GetVersion("network-gateway")
 
-	currentVersion["gladius-guardian"], err = GetVersion("guardian")
-	currentVersion["gladius-edged"], err = GetVersion("edged")
-	currentVersion["gladius-network-gateway"], err = GetVersion("network-gateway")
+	var needUpdate [3]bool
 
+	// compare
+	count := 0
 	for ver := range officialVersions {
 		if officialVersions[ver] != currentVersion[ver] {
-			fmt.Println(ver, true)
+			needUpdate[count] = false
 		} else {
-			fmt.Println(ver, false)
+			needUpdate[count] = true
 		}
+		count++
 	}
 
-	return false, nil
+	// if anything here is false then we need an update
+	if needUpdate[0] && needUpdate[1] && needUpdate[2] {
+		return false, nil
+	} else {
+		return true, utils.HandleError(errors.New("One or more of your modules is out of date"), "One or more of your modules is out of date", "node.needUpdate")
+	}
 }
