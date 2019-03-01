@@ -82,7 +82,7 @@ func CLIDefaults() map[string]string {
 	}
 	m["DirLogs"] = filepath.Join(base, "logs")
 	viper.SetDefault("Ports.Guardian", 7791)
-	viper.SetDefault("Ports.EdgeD", 8080)
+	viper.SetDefault("Ports.EdgeD", 8081)
 	viper.SetDefault("Ports.NetworkGateway", 3001)
 
 	return m
